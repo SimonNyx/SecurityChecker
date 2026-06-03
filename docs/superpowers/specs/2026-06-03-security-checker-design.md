@@ -38,7 +38,7 @@ A single `docker-compose.yml` at project root starts all five containers. An Ngi
 
 1. User submits product name / URL / repo via web UI or API
 2. API creates an `Assessment` record (status: `pending`) and enqueues a Celery job
-3. If input is a product name only, worker runs a quick product lookup (web search + AI) and returns candidate matches
+3. If input is a product name only, worker runs a quick product lookup (web search + AI) and returns a suggested product identity (name, vendor, URL)
 4. User confirms the identified product via a confirmation step in the UI
 5. Worker runs all 8 analysis modules (parallelised where possible)
 6. Each module writes its findings to `assessment_findings`
@@ -118,7 +118,7 @@ Eight modules run per assessment. Each returns a `score` (0.0–10.0), `rag` (re
 | product_name | varchar | |
 | product_url | varchar | nullable |
 | repo_url | varchar | nullable |
-| input_type | enum | name / url / repo |
+| input_type | enum | name / url / repo — repo takes precedence if repo_url is provided |
 | status | enum | pending / confirming / running / complete / failed |
 | overall_score | float | nullable until complete |
 | overall_rag | enum | red / amber / green — nullable until complete |
