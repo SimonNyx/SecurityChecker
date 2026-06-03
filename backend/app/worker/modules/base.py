@@ -16,10 +16,12 @@ class BaseModule(ABC):
     def __init__(self, assessment: Assessment, ai_client: AIClient):
         self.assessment = assessment
         self.ai = ai_client
+        self._advisor_prefix: str = ""
 
     @abstractmethod
     async def run(self) -> ModuleResult:
         """Gather data and return a ModuleResult."""
 
     async def _ask_ai(self, prompt: str, system: str = "") -> str:
-        return await self.ai.complete(prompt, system)
+        effective_system = (self._advisor_prefix + "\n\n" + system).strip() if self._advisor_prefix else system
+        return await self.ai.complete(prompt, effective_system)
