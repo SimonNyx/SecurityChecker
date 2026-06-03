@@ -55,6 +55,8 @@ services:
       - "3000:80"
     depends_on:
       - api
+    profiles:
+      - frontend
 
 volumes:
   postgres_data:
