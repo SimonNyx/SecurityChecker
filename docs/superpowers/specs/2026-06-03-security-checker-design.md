@@ -65,6 +65,44 @@ All providers are accessed through a single `AIClient` abstraction in the worker
 
 ---
 
+## Council Mode
+
+Assessments can be run in two modes, selected by the analyst at submission time.
+
+### Standard mode
+Each analysis module makes a single AI call to gather and synthesise findings. Fast — suitable for routine reviews. ~8 AI calls per assessment.
+
+### Deep Review mode
+Each analysis module's gathered data is run through a five-advisor council (adapted from the LLM Council methodology). Advisors analyse from independent security-specific lenses, peer-review each other's findings, and a chairman synthesises the final module score and summary. Produces higher-quality, multi-perspective findings that catch blind spots a single call misses. ~88 AI calls per assessment — takes several minutes longer.
+
+### Council advisors (security-specific lenses)
+
+| Advisor | Thinking style |
+|---------|---------------|
+| **The Threat Modeler** | Thinks like an attacker. What could be exploited? What's the worst-case abuse scenario? |
+| **The Compliance Officer** | GDPR, SOC2, ISO27001, Cyber Essentials lens. What would an auditor flag? |
+| **The Risk Analyst** | Quantifies and contextualises risk. How likely is this to cause a real incident? |
+| **The Devil's Advocate** | Challenges vendor claims and marketing language. What's being overstated or greenwashed? |
+| **The Pragmatist** | What does this mean in practice for the organisation deploying this product? |
+
+### Council flow per module (Deep Review)
+
+1. Module gathers raw data (web search, repo scan, API calls) — same as Standard
+2. Five advisors analyse the raw data in parallel, each from their assigned lens (150–300 words each)
+3. Five peer reviewers anonymously review all five advisor responses — identify strongest, biggest blind spot, and what all missed
+4. Chairman synthesises into final module `summary`, `score`, and `rag`
+5. Full council transcript stored in `assessment_findings.detail` jsonb field for audit/reference
+
+### Schema addition for council mode
+
+`assessments` table gains one column:
+
+| Column | Type | Notes |
+|--------|------|-------|
+| review_mode | enum | standard / deep_review — set at submission, default standard |
+
+---
+
 ## Analysis Modules
 
 Eight modules run per assessment. Each returns a `score` (0.0–10.0), `rag` (red/amber/green), a short `summary`, and a `detail` JSON blob with raw findings. Scores are weighted and averaged to produce the overall score; weights are configurable by Admin.
@@ -203,7 +241,7 @@ All routes prefixed `/api/v1/`. Authentication via JWT bearer token. API key aut
 |--------|------|---------------|-------|
 | POST | `/auth/login` | — | Returns JWT |
 | GET | `/assessments` | Viewer+ | Paginated list with filters |
-| POST | `/assessments` | Analyst+ | Submits new assessment |
+| POST | `/assessments` | Analyst+ | Submits new assessment — body includes `review_mode: standard\|deep_review` |
 | GET | `/assessments/{id}` | Viewer+ | Full detail including findings |
 | POST | `/assessments/{id}/confirm-product` | Analyst+ | Confirms AI product suggestion |
 | PUT | `/assessments/{id}/findings/{category}` | Analyst+ | Edit notes, override score |
@@ -220,7 +258,7 @@ All routes prefixed `/api/v1/`. Authentication via JWT bearer token. API key aut
 
 1. **Login** — email/password form
 2. **Dashboard** — paginated assessment list with RAG colour coding, score, recommendation, status, and filters (RAG, status, search)
-3. **New Assessment** — form: product name, URL (optional), repo URL (optional)
+3. **New Assessment** — form: product name, URL (optional), repo URL (optional), review mode (Standard / Deep Review) with a brief description of each
 4. **Product Confirmation** — AI-suggested name, vendor, and URL; Accept / Edit / Try Again
 5. **Assessment Detail** — product header with overall score and RAG; 8 module cards each showing score, RAG, summary, and analyst notes field; Export PDF and Mark Approved/Rejected actions
 6. **Admin — Users** — user list with create/edit/deactivate
