@@ -80,7 +80,7 @@ Each analysis module's gathered data is run through a five-advisor council (adap
 | Advisor | Thinking style |
 |---------|---------------|
 | **The Threat Modeler** | Thinks like an attacker. What could be exploited? What's the worst-case abuse scenario? |
-| **The Compliance Officer** | GDPR, SOC2, ISO27001, Cyber Essentials lens. What would an auditor flag? |
+| **The Compliance Officer** | GDPR, SOC2, ISO27001, Cyber Essentials, UK Defence Cyber (Cyber Essentials Plus, DEFCON 658, DCPP Cyber Security Model) lens. What would an auditor flag? |
 | **The Risk Analyst** | Quantifies and contextualises risk. How likely is this to cause a real incident? |
 | **The Devil's Advocate** | Challenges vendor claims and marketing language. What's being overstated or greenwashed? |
 | **The Pragmatist** | What does this mean in practice for the organisation deploying this product? |
