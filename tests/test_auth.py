@@ -21,7 +21,7 @@ async def test_login_unknown_email(client):
 @pytest.mark.asyncio
 async def test_protected_route_no_token(client):
     r = await client.get("/api/v1/assessments")
-    assert r.status_code == 403
+    assert r.status_code == 401
 
 @pytest.mark.asyncio
 async def test_protected_route_invalid_token(client):
