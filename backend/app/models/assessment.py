@@ -1,7 +1,7 @@
 import uuid
 import enum
 from datetime import datetime
-from sqlalchemy import String, Float, ForeignKey, func
+from sqlalchemy import String, Float, ForeignKey, func, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import Enum as SAEnum
@@ -54,7 +54,10 @@ class Assessment(Base):
     )
     submitted_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        server_default=func.now(),
+        server_onupdate=text("now()"),
+    )
 
     findings: Mapped[list["AssessmentFinding"]] = relationship(back_populates="assessment", lazy="selectin")
     product_confirmation: Mapped["ProductConfirmation | None"] = relationship(

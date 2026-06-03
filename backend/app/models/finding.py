@@ -25,7 +25,7 @@ class AssessmentFinding(Base):
     assessment_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("assessments.id"), nullable=False)
     category: Mapped[Category] = mapped_column(SAEnum(Category, name="category_enum"), nullable=False)
     score: Mapped[float] = mapped_column(Float, nullable=False)
-    rag: Mapped[RAGStatus] = mapped_column(SAEnum(RAGStatus), nullable=False)
+    rag: Mapped[RAGStatus] = mapped_column(SAEnum(RAGStatus, name="rag_status_enum"), nullable=False)
     summary: Mapped[str] = mapped_column(Text, nullable=False)
     detail: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     analyst_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
