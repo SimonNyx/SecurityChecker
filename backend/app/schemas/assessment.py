@@ -15,6 +15,9 @@ class ProductConfirmRequest(BaseModel):
     confirmed_vendor: str
     confirmed_url: str
 
+class RerunRequest(BaseModel):
+    review_mode: ReviewMode
+
 class AssessmentOut(BaseModel):
     model_config = {"from_attributes": True}
     id: uuid.UUID

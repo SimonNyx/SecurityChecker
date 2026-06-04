@@ -11,7 +11,7 @@ from app.models.user import User, Role
 from app.models.assessment import Assessment, InputType, AssessmentStatus
 from app.models.finding import AssessmentFinding, Category
 from app.models.product_confirmation import ProductConfirmation
-from app.schemas.assessment import AssessmentCreate, AssessmentOut, ProductConfirmRequest
+from app.schemas.assessment import AssessmentCreate, AssessmentOut, ProductConfirmRequest, RerunRequest
 from app.schemas.finding import FindingOut, FindingUpdate
 from app.api.deps import get_current_user
 from app.core.rbac import require_role
@@ -109,6 +109,48 @@ async def confirm_product(
     assessment.status = AssessmentStatus.RUNNING
     await db.commit()
     await db.refresh(assessment)
+
+    try:
+        celery_app.send_task("run_analysis", args=[str(assessment_id)])
+    except Exception as e:
+        logger.error(f"Failed to dispatch run_analysis for {assessment_id}: {e}")
+
+    return assessment
+
+@router.post("/{assessment_id}/rerun", response_model=AssessmentOut)
+async def rerun_assessment(
+    assessment_id: uuid.UUID,
+    body: RerunRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(Role.ANALYST)),
+):
+    result = await db.execute(select(Assessment).where(Assessment.id == assessment_id))
+    assessment = result.scalar_one_or_none()
+    if not assessment:
+        raise HTTPException(status_code=404, detail="Assessment not found")
+    if assessment.status in (AssessmentStatus.PENDING, AssessmentStatus.CONFIRMING, AssessmentStatus.RUNNING):
+        raise HTTPException(status_code=400, detail="Assessment is already running")
+
+    # Clear previous results
+    await db.execute(
+        select(AssessmentFinding).where(AssessmentFinding.assessment_id == assessment_id)
+    )
+    existing_findings = (await db.execute(
+        select(AssessmentFinding).where(AssessmentFinding.assessment_id == assessment_id)
+    )).scalars().all()
+    for f in existing_findings:
+        await db.delete(f)
+
+    assessment.review_mode = body.review_mode
+    assessment.status = AssessmentStatus.RUNNING
+    assessment.overall_score = None
+    assessment.overall_rag = None
+    assessment.recommendation = None
+    await db.commit()
+    await db.refresh(assessment)
+    await log_action(db, current_user.id, "rerun_assessment", "assessment", assessment_id,
+                     {"review_mode": body.review_mode.value})
+    await db.commit()
 
     try:
         celery_app.send_task("run_analysis", args=[str(assessment_id)])

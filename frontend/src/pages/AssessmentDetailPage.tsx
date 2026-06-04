@@ -1,7 +1,8 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
-import { getAssessment, confirmProduct, downloadPdf, deleteAssessment } from '../api/assessments'
+import { useState, useEffect } from 'react'
+import { getAssessment, confirmProduct, downloadPdf, deleteAssessment, rerunAssessment } from '../api/assessments'
+import type { ReviewMode } from '../types'
 import RAGBadge from '../components/RAGBadge'
 import FindingCard from '../components/FindingCard'
 
@@ -49,6 +50,15 @@ export default function AssessmentDetailPage() {
     onSuccess: () => navigate('/'),
   })
 
+  const [rerunMode, setRerunMode] = useState<ReviewMode>('standard')
+  useEffect(() => {
+    if (assessment) setRerunMode(assessment.review_mode)
+  }, [assessment?.id])
+  const rerunMut = useMutation({
+    mutationFn: () => rerunAssessment(id!, rerunMode),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['assessment', id] }),
+  })
+
   function handleDelete() {
     if (!window.confirm(`Delete this assessment? This cannot be undone.`)) return
     deleteMut.mutate()
@@ -70,7 +80,26 @@ export default function AssessmentDetailPage() {
             {STATUS_LABELS[assessment.status]} &middot; {assessment.review_mode === 'deep_review' ? 'Deep Review' : 'Standard'} &middot; {new Date(assessment.created_at).toLocaleDateString()}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          {(assessment.status === 'complete' || assessment.status === 'failed') && (
+            <>
+              <select
+                value={rerunMode}
+                onChange={e => setRerunMode(e.target.value as ReviewMode)}
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-300"
+              >
+                <option value="standard">Standard</option>
+                <option value="deep_review">Deep Review</option>
+              </select>
+              <button
+                onClick={() => rerunMut.mutate()}
+                disabled={rerunMut.isPending}
+                className="bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 disabled:opacity-50"
+              >
+                {rerunMut.isPending ? 'Starting…' : 'Re-run'}
+              </button>
+            </>
+          )}
           {assessment.status === 'complete' && (
             <button
               onClick={() => downloadPdf(assessment.id, assessment.product_name)}

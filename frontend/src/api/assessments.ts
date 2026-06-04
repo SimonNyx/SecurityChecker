@@ -25,6 +25,11 @@ export async function deleteAssessment(id: string): Promise<void> {
   await client.delete(`/assessments/${id}`)
 }
 
+export async function rerunAssessment(id: string, review_mode: 'standard' | 'deep_review'): Promise<Assessment> {
+  const { data } = await client.post<Assessment>(`/assessments/${id}/rerun`, { review_mode })
+  return data
+}
+
 export async function downloadPdf(id: string, productName: string): Promise<void> {
   const { data } = await client.get<Blob>(`/assessments/${id}/pdf`, { responseType: 'blob' })
   const url = URL.createObjectURL(data)
