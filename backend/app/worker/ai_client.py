@@ -25,9 +25,11 @@ class AIClient:
         if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"
 
+        # OpenWebUI uses /api/chat/completions; Ollama uses /v1/chat/completions
+        path = "/v1/chat/completions" if self.provider == AIProvider.OLLAMA else "/api/chat/completions"
         async with httpx.AsyncClient(timeout=120) as http:
             resp = await http.post(
-                f"{self.base_url}/api/chat/completions",
+                f"{self.base_url}{path}",
                 headers=headers,
                 json={"model": self.model, "messages": messages},
             )
