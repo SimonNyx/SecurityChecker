@@ -126,7 +126,7 @@ export default function DashboardPage() {
                     {STATUS_LABELS[a.status]}
                   </span>
                   {(a.status === 'running' || a.status === 'confirming' || a.status === 'pending') && (
-                    <ElapsedTimer since={a.created_at} className="text-xs text-gray-400" />
+                    <ElapsedTimer since={a.run_started_at ?? a.created_at} className="text-xs text-gray-400" />
                   )}
                   <button
                     onClick={() => handleDelete(a.id, a.product_name)}
