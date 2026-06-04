@@ -44,6 +44,7 @@ export interface Assessment {
   input_type: InputType
   status: AssessmentStatus
   review_mode: ReviewMode
+  project_scope: string | null
   overall_score: number | null
   overall_rag: RAGStatus | null
   recommendation: Recommendation | null
@@ -58,6 +59,7 @@ export interface AssessmentCreate {
   product_url?: string
   repo_url?: string
   review_mode: ReviewMode
+  project_scope?: string
 }
 
 export interface ProductConfirmRequest {

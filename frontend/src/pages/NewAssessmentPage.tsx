@@ -11,6 +11,7 @@ export default function NewAssessmentPage() {
     product_url: '',
     repo_url: '',
     review_mode: 'standard' as ReviewMode,
+    project_scope: '',
   })
   const [error, setError] = useState<string | null>(null)
 
@@ -28,6 +29,7 @@ export default function NewAssessmentPage() {
       product_url: form.product_url || undefined,
       repo_url: form.repo_url || undefined,
       review_mode: form.review_mode,
+      project_scope: form.project_scope || undefined,
     })
   }
 
@@ -73,6 +75,20 @@ export default function NewAssessmentPage() {
             placeholder="https://github.com/org/repo"
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Project Scope <span className="text-gray-400 font-normal">(optional)</span>
+          </label>
+          <textarea
+            rows={3}
+            value={form.project_scope}
+            onChange={e => setForm(f => ({ ...f, project_scope: e.target.value }))}
+            placeholder="Describe the project's nature, audience, and purpose. e.g. 'Small community fork removing upload features to reduce data exfiltration risk. Intended for personal/small team use, not enterprise deployment.'"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          />
+          <p className="text-xs text-gray-400 mt-1">AI modules will adjust grading expectations based on this context.</p>
         </div>
 
         <div>

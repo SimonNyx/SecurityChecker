@@ -22,6 +22,16 @@ class BaseModule(ABC):
     async def run(self) -> ModuleResult:
         """Gather data and return a ModuleResult."""
 
+    def _scope_context(self) -> str:
+        if not self.assessment.project_scope:
+            return ""
+        return (
+            f"\n\nPROJECT SCOPE CONTEXT (provided by submitter — adjust grading expectations accordingly):\n"
+            f"{self.assessment.project_scope}"
+        )
+
     async def _ask_ai(self, prompt: str, system: str = "") -> str:
+        scope = self._scope_context()
         effective_system = (self._advisor_prefix + "\n\n" + system).strip() if self._advisor_prefix else system
+        effective_system = (effective_system + scope).strip()
         return await self.ai.complete(prompt, effective_system)

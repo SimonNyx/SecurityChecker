@@ -79,6 +79,11 @@ export default function AssessmentDetailPage() {
           <p className="text-sm text-gray-500 mt-1">
             {STATUS_LABELS[assessment.status]} &middot; {assessment.review_mode === 'deep_review' ? 'Deep Review' : 'Standard'} &middot; {new Date(assessment.created_at).toLocaleDateString()}
           </p>
+          {assessment.project_scope && (
+            <p className="text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded-lg px-3 py-1.5 mt-2 max-w-lg">
+              <span className="font-semibold">Scope: </span>{assessment.project_scope}
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {(assessment.status === 'complete' || assessment.status === 'failed') && (

@@ -9,6 +9,7 @@ class AssessmentCreate(BaseModel):
     product_url: str | None = None
     repo_url: str | None = None
     review_mode: ReviewMode = ReviewMode.STANDARD
+    project_scope: str | None = None
 
 class ProductConfirmRequest(BaseModel):
     confirmed_name: str
@@ -27,6 +28,7 @@ class AssessmentOut(BaseModel):
     input_type: InputType
     status: AssessmentStatus
     review_mode: ReviewMode
+    project_scope: str | None
     overall_score: float | None
     overall_rag: RAGStatus | None
     recommendation: Recommendation | None

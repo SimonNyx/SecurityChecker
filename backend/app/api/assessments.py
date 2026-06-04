@@ -54,6 +54,7 @@ async def create_assessment(
         repo_url=body.repo_url,
         input_type=input_type,
         review_mode=body.review_mode,
+        project_scope=body.project_scope,
         submitted_by=current_user.id,
         status=AssessmentStatus.PENDING,
     )
