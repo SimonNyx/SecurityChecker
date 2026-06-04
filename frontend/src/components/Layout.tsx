@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 const navItems = [
   { to: '/', label: 'Dashboard', end: true },
   { to: '/assessments/new', label: 'New Assessment' },
+  { to: '/methodology', label: 'Methodology' },
 ]
 
 const adminItems = [
