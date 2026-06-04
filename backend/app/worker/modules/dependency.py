@@ -2,6 +2,7 @@ import json
 import subprocess
 import tempfile
 import os
+from urllib.parse import urlparse
 from app.worker.modules.base import BaseModule, ModuleResult
 from app.worker.scoring import score_to_rag
 
@@ -33,10 +34,17 @@ def _run_pip_audit(repo_path: str) -> dict:
     except (subprocess.TimeoutExpired, json.JSONDecodeError, FileNotFoundError):
         return {}
 
+def _is_safe_repo_url(url: str) -> bool:
+    try:
+        parsed = urlparse(url)
+        return parsed.scheme in ("https", "http") and bool(parsed.netloc)
+    except Exception:
+        return False
+
 def _clone_repo(repo_url: str, target_dir: str) -> bool:
     try:
         result = subprocess.run(
-            ["git", "clone", "--depth", "1", repo_url, target_dir],
+            ["git", "clone", "--depth", "1", "--no-local", repo_url, target_dir],
             capture_output=True, timeout=120
         )
         return result.returncode == 0
@@ -50,7 +58,7 @@ class DependencyModule(BaseModule):
         scan_data = {}
         scanner_used = "ai_synthesis"
 
-        if self.assessment.repo_url:
+        if self.assessment.repo_url and _is_safe_repo_url(self.assessment.repo_url):
             with tempfile.TemporaryDirectory() as tmpdir:
                 repo_dir = os.path.join(tmpdir, "repo")
                 if _clone_repo(self.assessment.repo_url, repo_dir):
