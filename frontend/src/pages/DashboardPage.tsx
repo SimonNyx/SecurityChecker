@@ -39,6 +39,8 @@ export default function DashboardPage() {
     deleteMut.mutate(id)
   }
 
+  const [search, setSearch] = useState('')
+
   const { data: assessments, isLoading, isError } = useQuery({
     queryKey: ['assessments'],
     queryFn: () => listAssessments({ limit: 50 }),
@@ -57,8 +59,6 @@ export default function DashboardPage() {
   if (isError) {
     return <div className="text-red-600 text-sm">Failed to load assessments.</div>
   }
-
-  const [search, setSearch] = useState('')
   const complete = assessments?.filter(a => a.status === 'complete') ?? []
   const filtered = search.trim()
     ? complete.filter(a => a.product_name.toLowerCase().includes(search.toLowerCase()))
