@@ -51,7 +51,7 @@ async def _run_assessment_async(assessment_id: str):
             return
 
         try:
-            ai_client = await get_ai_client_from_db(db)
+            ai_client = await get_ai_client_from_db()
 
             # Product lookup / confirmation
             assessment.status = AssessmentStatus.CONFIRMING
@@ -95,7 +95,7 @@ async def _run_analysis_async(assessment_id: str):
             return
 
         try:
-            ai_client = await get_ai_client_from_db(db)
+            ai_client = await get_ai_client_from_db()
             assessment.status = AssessmentStatus.RUNNING
             await db.commit()
             await _run_modules(assessment_uuid, db, ai_client, assessment)

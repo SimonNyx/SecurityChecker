@@ -10,3 +10,8 @@ export async function updateAIConfig(body: AIConfigUpdate): Promise<AIConfig> {
   const { data } = await client.put<AIConfig>('/ai-config', body)
   return data
 }
+
+export async function testAIConnection(): Promise<{ ok: boolean; provider: string; model: string; response: string }> {
+  const { data } = await client.post('/ai-config/test')
+  return data
+}

@@ -34,6 +34,18 @@ class AIClient:
             resp.raise_for_status()
             return resp.json()["choices"][0]["message"]["content"]
 
+    async def test_connection(self) -> dict:
+        """Send a minimal ping to verify the AI provider is reachable and responsive."""
+        try:
+            response = await self.complete("Reply with the single word: ok", system="")
+            return {"ok": True, "response": response[:100]}
+        except httpx.ConnectError as e:
+            return {"ok": False, "error": f"Cannot connect to {self.base_url}: {e}"}
+        except httpx.HTTPStatusError as e:
+            return {"ok": False, "error": f"HTTP {e.response.status_code}: {e.response.text[:200]}"}
+        except Exception as e:
+            return {"ok": False, "error": str(e)[:200]}
+
     async def _gemini_complete(self, prompt: str, system: str) -> str:
         full_prompt = f"{system}\n\n{prompt}" if system else prompt
         url = f"{self.base_url}/v1beta/models/{self.model}:generateContent?key={self.api_key}"

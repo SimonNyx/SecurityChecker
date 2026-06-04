@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getAIConfig, updateAIConfig } from '../api/aiConfig'
+import { getAIConfig, updateAIConfig, testAIConnection } from '../api/aiConfig'
 import type { AIProvider, AIConfigUpdate } from '../types'
 
 const PROVIDERS: AIProvider[] = ['openwebui', 'ollama', 'gemini']
@@ -16,6 +16,8 @@ export default function AdminAIConfigPage() {
     api_key: '',
   })
   const [saved, setSaved] = useState(false)
+  const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null)
+  const [testing, setTesting] = useState(false)
 
   useEffect(() => {
     if (config) {
@@ -77,7 +79,7 @@ export default function AdminAIConfigPage() {
           />
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <button
             onClick={() => saveMut.mutate(form)}
             disabled={saveMut.isPending}
@@ -85,9 +87,33 @@ export default function AdminAIConfigPage() {
           >
             {saveMut.isPending ? 'Saving…' : 'Save Configuration'}
           </button>
+          <button
+            onClick={async () => {
+              setTesting(true)
+              setTestResult(null)
+              try {
+                const r = await testAIConnection()
+                setTestResult({ ok: true, message: `Connected — model responded: "${r.response}"` })
+              } catch (e: unknown) {
+                const msg = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail ?? 'Connection failed'
+                setTestResult({ ok: false, message: msg })
+              } finally {
+                setTesting(false)
+              }
+            }}
+            disabled={testing}
+            className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 disabled:opacity-50 border border-gray-300"
+          >
+            {testing ? 'Testing…' : 'Test Connection'}
+          </button>
           {saved && <span className="text-green-700 text-sm font-medium">Saved!</span>}
           {saveMut.isError && <span className="text-red-600 text-sm">Save failed.</span>}
         </div>
+        {testResult && (
+          <div className={`rounded-lg px-4 py-3 text-sm ${testResult.ok ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+            {testResult.ok ? '✓ ' : '✗ '}{testResult.message}
+          </div>
+        )}
       </div>
 
       {config && (
