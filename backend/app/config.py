@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     secret_key: str
     encryption_key: str
     openwebui_base_url: str = "http://localhost:3000"
+    cors_origins: str = "http://localhost:3000"
     algorithm: str = "HS256"
     access_token_expire_hours: int = 8
 

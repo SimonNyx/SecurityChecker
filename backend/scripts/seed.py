@@ -1,5 +1,6 @@
 """Run with: cd backend && python scripts/seed.py"""
 import asyncio
+import secrets
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from app.config import settings
 from app.database import Base
@@ -16,14 +17,16 @@ async def seed():
         # Admin user — skip if already exists
         existing = await db.execute(select(User).where(User.email == "admin@securitychecker.local"))
         if not existing.scalar_one_or_none():
+            password = secrets.token_urlsafe(16)
             admin = User(
                 email="admin@securitychecker.local",
-                hashed_password=hash_password("changeme"),
+                hashed_password=hash_password(password),
                 full_name="Admin",
                 role=Role.ADMIN,
             )
             db.add(admin)
-            print("Seeded: admin@securitychecker.local / changeme")
+            print(f"Seeded: admin@securitychecker.local / {password}")
+            print("IMPORTANT: Save this password — it will not be shown again.")
         else:
             print("Skipped: admin user already exists")
 
