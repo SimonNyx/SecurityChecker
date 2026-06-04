@@ -65,7 +65,9 @@ async def create_assessment(
     await db.commit()
 
     try:
-        celery_app.send_task("run_assessment", args=[str(assessment.id)])
+        task = celery_app.send_task("run_assessment", args=[str(assessment.id)])
+        assessment.celery_task_id = task.id
+        await db.commit()
     except Exception as e:
         logger.error(f"Failed to dispatch run_assessment for {assessment.id}: {e}")
 
@@ -112,7 +114,10 @@ async def confirm_product(
     await db.refresh(assessment)
 
     try:
-        celery_app.send_task("run_analysis", args=[str(assessment_id)])
+        task = celery_app.send_task("run_analysis", args=[str(assessment_id)])
+        assessment.celery_task_id = task.id
+        await db.commit()
+        await db.refresh(assessment)
     except Exception as e:
         logger.error(f"Failed to dispatch run_analysis for {assessment_id}: {e}")
 
@@ -175,7 +180,10 @@ async def rerun_assessment(
     await db.commit()
 
     try:
-        celery_app.send_task("run_analysis", args=[str(assessment_id)])
+        task = celery_app.send_task("run_analysis", args=[str(assessment_id)])
+        assessment.celery_task_id = task.id
+        await db.commit()
+        await db.refresh(assessment)
     except Exception as e:
         logger.error(f"Failed to dispatch run_analysis for {assessment_id}: {e}")
 
@@ -191,6 +199,11 @@ async def delete_assessment(
     assessment = result.scalar_one_or_none()
     if not assessment:
         raise HTTPException(status_code=404, detail="Assessment not found")
+    if assessment.celery_task_id:
+        try:
+            celery_app.control.revoke(assessment.celery_task_id, terminate=True, signal="SIGTERM")
+        except Exception as e:
+            logger.warning(f"Failed to revoke task {assessment.celery_task_id}: {e}")
     await db.delete(assessment)
     await db.commit()
     await log_action(db, current_user.id, "delete_assessment", "assessment", assessment_id)
