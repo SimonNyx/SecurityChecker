@@ -157,6 +157,7 @@ export default function DashboardPage() {
                   <th className="text-left px-4 py-3 font-semibold text-gray-600">RAG</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-600">Recommendation</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-600">Mode</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Submitted By</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-600">Date</th>
                   <th className="px-4 py-3" />
                 </tr>
@@ -180,6 +181,9 @@ export default function DashboardPage() {
                     </td>
                     <td className="px-4 py-3 text-gray-500 capitalize">
                       {a.review_mode === 'deep_review' ? 'Deep' : 'Standard'}
+                    </td>
+                    <td className="px-4 py-3 text-gray-500">
+                      {a.submitted_by_name ?? '—'}
                     </td>
                     <td className="px-4 py-3 text-gray-500">
                       {new Date(a.created_at).toLocaleDateString()}

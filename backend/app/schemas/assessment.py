@@ -35,6 +35,7 @@ class AssessmentOut(BaseModel):
     overall_rag: RAGStatus | None
     recommendation: Recommendation | None
     submitted_by: uuid.UUID
+    submitted_by_name: str | None = None
     created_at: datetime
     updated_at: datetime
     findings: list[FindingOut] = []

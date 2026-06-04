@@ -82,6 +82,7 @@ export default function AssessmentDetailPage() {
           <h2 className="text-2xl font-bold text-gray-900">{assessment.product_name}</h2>
           <p className="text-sm text-gray-500 mt-1">
             {STATUS_LABELS[assessment.status]} &middot; {assessment.review_mode === 'deep_review' ? 'Deep Review' : 'Standard'} &middot; {new Date(assessment.created_at).toLocaleDateString()}
+            {assessment.submitted_by_name && <> &middot; Submitted by <span className="font-medium text-gray-700">{assessment.submitted_by_name}</span></>}
           </p>
           {assessment.project_scope && (
             <p className="text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded-lg px-3 py-1.5 mt-2 max-w-lg">

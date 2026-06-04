@@ -61,6 +61,12 @@ class Assessment(Base):
         server_onupdate=text("now()"),
     )
 
+    submitter: Mapped["User"] = relationship(foreign_keys=[submitted_by], lazy="selectin")
+
+    @property
+    def submitted_by_name(self) -> str | None:
+        return self.submitter.full_name if self.submitter else None
+
     findings: Mapped[list["AssessmentFinding"]] = relationship(back_populates="assessment", lazy="selectin", cascade="all, delete-orphan")
     product_confirmation: Mapped["ProductConfirmation | None"] = relationship(
         back_populates="assessment", uselist=False, lazy="selectin", cascade="all, delete-orphan"

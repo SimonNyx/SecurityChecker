@@ -50,6 +50,7 @@ export interface Assessment {
   overall_rag: RAGStatus | null
   recommendation: Recommendation | null
   submitted_by: string
+  submitted_by_name: string | null
   created_at: string
   updated_at: string
   findings: AssessmentFinding[]
