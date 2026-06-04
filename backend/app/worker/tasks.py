@@ -1,5 +1,6 @@
 import uuid
 import logging
+from datetime import datetime, timezone
 from celery import shared_task
 from sqlalchemy import select
 
@@ -64,6 +65,7 @@ async def _run_assessment_async(assessment_id: str):
                 if not assessment.product_url and product_info.get("url"):
                     assessment.product_url = product_info["url"]
                 assessment.status = AssessmentStatus.RUNNING
+                assessment.run_started_at = datetime.now(timezone.utc)
                 await db.commit()
                 await _run_modules(assessment_uuid, db, ai_client, assessment)
             else:
@@ -165,6 +167,7 @@ async def _run_analysis_async(assessment_id: str):
         try:
             ai_client = await get_ai_client_from_db()
             assessment.status = AssessmentStatus.RUNNING
+            assessment.run_started_at = datetime.now(timezone.utc)
             await db.commit()
             await _run_modules(assessment_uuid, db, ai_client, assessment)
         except Exception as e:
@@ -257,23 +260,75 @@ async def _generate_executive_summary(assessment, scores: dict, ai_client) -> st
         f"- {category_labels.get(k, k)}: {v:.1f}/10" for k, v in sorted(scores.items())
     )
     scope_text = f"\nProject scope context: {assessment.project_scope}" if assessment.project_scope else ""
-    prompt = f"""Write a concise executive summary for a security assessment of {assessment.product_name}.{scope_text}
+    overall = aggregate_scores(scores, {k.value: v for k, v in DEFAULT_WEIGHTS.items()})
+    prompt = f"""You are a senior security consultant. Analyse this security assessment and respond with ONLY a JSON object — no markdown, no explanation, no text outside the JSON.
+
+Product: {assessment.product_name}{scope_text}
 
 Module scores:
 {scores_text}
 
-Overall score: {aggregate_scores(scores, {k.value: v for k, v in DEFAULT_WEIGHTS.items()}):.1f}/10
+Overall score: {overall:.1f}/10
 
-Write 3-4 paragraphs suitable for a non-technical decision-maker:
-1. Opening: overall security posture and recommendation
-2. Key strengths (highest-scoring areas)
-3. Key concerns (lowest-scoring areas and their business risk)
-4. Closing: recommended next steps or conditions for approval
+Return this exact JSON structure:
+{{
+  "overall_posture": "<one paragraph: overall score, risk level, and whether the product is suitable for use>",
+  "key_strengths": [
+    "<module name>: <one sentence on strength and business significance>",
+    "<module name>: <one sentence>",
+    "<module name>: <one sentence>"
+  ],
+  "key_concerns": [
+    "<module name>: <one sentence on specific risk and business impact>",
+    "<module name>: <one sentence>",
+    "<module name>: <one sentence>"
+  ],
+  "next_steps": [
+    "<specific actionable step>",
+    "<second step>",
+    "<third step>"
+  ]
+}}
 
-Be direct and specific. Avoid generic filler. Reference actual module scores where relevant."""
+Respond with the JSON object only."""
 
     try:
-        return await ai_client.complete(prompt, system="You are a senior security consultant writing an executive summary for a board-level audience. Be precise, direct, and actionable.")
+        raw = await ai_client.complete(prompt, system="You are a senior security consultant. Output only valid JSON. No markdown fences. No text before or after the JSON object.")
+        return _format_exec_summary(raw)
     except Exception as e:
         logger.error(f"Failed to generate executive summary: {e}")
         return ""
+
+
+def _format_exec_summary(raw: str) -> str:
+    import json, re
+    text = raw.strip()
+    # Strip markdown code fences if present
+    text = re.sub(r'^```[a-z]*\n?', '', text)
+    text = re.sub(r'\n?```$', '', text)
+    text = text.strip()
+    try:
+        data = json.loads(text)
+        lines = []
+        if data.get("overall_posture"):
+            lines.append("OVERALL POSTURE")
+            lines.append(data["overall_posture"].strip())
+            lines.append("")
+        if data.get("key_strengths"):
+            lines.append("KEY STRENGTHS")
+            for item in data["key_strengths"]:
+                lines.append(f"- {item.strip()}")
+            lines.append("")
+        if data.get("key_concerns"):
+            lines.append("KEY CONCERNS")
+            for item in data["key_concerns"]:
+                lines.append(f"- {item.strip()}")
+            lines.append("")
+        if data.get("next_steps"):
+            lines.append("RECOMMENDED NEXT STEPS")
+            for item in data["next_steps"]:
+                lines.append(f"- {item.strip()}")
+        return "\n".join(lines).strip()
+    except (json.JSONDecodeError, KeyError, TypeError):
+        logger.warning("exec summary JSON parse failed, storing raw")
+        return raw
