@@ -117,6 +117,25 @@ async def confirm_product(
 
     return assessment
 
+@router.post("/{assessment_id}/modules/{category}/rerun", status_code=status.HTTP_202_ACCEPTED)
+async def rerun_module(
+    assessment_id: uuid.UUID,
+    category: Category,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(Role.ANALYST)),
+):
+    result = await db.execute(select(Assessment).where(Assessment.id == assessment_id))
+    assessment = result.scalar_one_or_none()
+    if not assessment:
+        raise HTTPException(status_code=404, detail="Assessment not found")
+    if assessment.status == AssessmentStatus.RUNNING:
+        raise HTTPException(status_code=400, detail="Assessment is already running")
+    try:
+        celery_app.send_task("run_single_module", args=[str(assessment_id), category.value])
+    except Exception as e:
+        logger.error(f"Failed to dispatch run_single_module for {assessment_id}/{category}: {e}")
+    return {"queued": True, "category": category.value}
+
 @router.post("/{assessment_id}/rerun", response_model=AssessmentOut)
 async def rerun_assessment(
     assessment_id: uuid.UUID,

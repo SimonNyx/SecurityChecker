@@ -80,6 +80,74 @@ async def _run_assessment_async(assessment_id: str):
                 await err_db.commit()
 
 
+@celery_app.task(bind=True, name="run_single_module")
+def run_single_module(self, assessment_id: str, category_value: str):
+    """Re-run a single analysis module, replace its finding, recompute overall score."""
+    run_async(_run_single_module_async(assessment_id, category_value))
+
+
+async def _run_single_module_async(assessment_id: str, category_value: str):
+    assessment_uuid = uuid.UUID(assessment_id)
+    target_category = Category(category_value)
+    module_class = next((cls for cls, cat in MODULE_MAP if cat == target_category), None)
+    if not module_class:
+        logger.error(f"No module found for category {category_value}")
+        return
+
+    async with worker_db() as db:
+        result = await db.execute(select(Assessment).where(Assessment.id == assessment_uuid))
+        assessment = result.scalar_one_or_none()
+        if not assessment:
+            return
+
+        try:
+            ai_client = await get_ai_client_from_db()
+            module = module_class(assessment, ai_client)
+            if assessment.review_mode == ReviewMode.DEEP_REVIEW:
+                mod_result = await run_council(module)
+            else:
+                mod_result = await module.run()
+
+            # Replace existing finding for this category
+            existing = await db.execute(
+                select(AssessmentFinding).where(
+                    AssessmentFinding.assessment_id == assessment_uuid,
+                    AssessmentFinding.category == target_category,
+                )
+            )
+            finding = existing.scalar_one_or_none()
+            if finding:
+                finding.score = mod_result.score
+                finding.rag = mod_result.rag
+                finding.summary = mod_result.summary
+                finding.detail = mod_result.detail
+            else:
+                db.add(AssessmentFinding(
+                    assessment_id=assessment_uuid,
+                    category=target_category,
+                    score=mod_result.score,
+                    rag=mod_result.rag,
+                    summary=mod_result.summary,
+                    detail=mod_result.detail,
+                ))
+            await db.commit()
+
+            # Recompute overall from all current findings
+            all_findings = (await db.execute(
+                select(AssessmentFinding).where(AssessmentFinding.assessment_id == assessment_uuid)
+            )).scalars().all()
+            scores = {f.category.value: f.score for f in all_findings}
+            weight_map = {k.value: v for k, v in DEFAULT_WEIGHTS.items()}
+            overall = aggregate_scores(scores, weight_map)
+            assessment.overall_score = overall
+            assessment.overall_rag = score_to_rag(overall)
+            assessment.recommendation = derive_recommendation(assessment.overall_rag)
+            await db.commit()
+
+        except Exception as e:
+            logger.exception(f"Single module {category_value} failed for {assessment_uuid}: {e}")
+
+
 @celery_app.task(bind=True, name="run_analysis")
 def run_analysis(self, assessment_id: str):
     """Run all analysis modules for a confirmed assessment."""
