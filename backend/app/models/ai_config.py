@@ -1,6 +1,6 @@
 import uuid
 import enum
-from sqlalchemy import String, Boolean
+from sqlalchemy import String, Boolean, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import Enum as SAEnum
@@ -14,9 +14,11 @@ class AIProvider(str, enum.Enum):
 class AIProviderConfig(Base):
     __tablename__ = "ai_provider_config"
 
+    __table_args__ = (UniqueConstraint('provider', name='uq_ai_provider_config_provider'),)
+
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     provider: Mapped[AIProvider] = mapped_column(SAEnum(AIProvider, name="ai_provider_enum"), nullable=False)
-    base_url: Mapped[str] = mapped_column(String, nullable=False)
+    base_url: Mapped[str] = mapped_column(String, nullable=False, default="")
     api_key: Mapped[str] = mapped_column(String, nullable=False, default="")
-    model_name: Mapped[str] = mapped_column(String, nullable=False)
+    model_name: Mapped[str] = mapped_column(String, nullable=False, default="")
     is_active: Mapped[bool] = mapped_column(Boolean, default=False)

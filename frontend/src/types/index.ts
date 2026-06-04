@@ -92,12 +92,12 @@ export interface AIConfig {
   base_url: string
   model_name: string
   is_active: boolean
+  has_api_key: boolean
 }
 
 export interface AIConfigUpdate {
-  provider: AIProvider
-  base_url: string
-  model_name: string
+  base_url?: string
+  model_name?: string
   api_key?: string
 }
 
