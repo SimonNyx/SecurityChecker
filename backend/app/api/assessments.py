@@ -21,6 +21,10 @@ from app.worker.celery_app import celery_app
 
 router = APIRouter(prefix="/assessments", tags=["assessments"])
 
+def _require_owner_or_admin(assessment: Assessment, current_user: User) -> None:
+    if current_user.role != Role.ADMIN and assessment.submitted_by != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorised to modify this assessment")
+
 def _derive_input_type(body: AssessmentCreate) -> InputType:
     if body.repo_url:
         return InputType.REPO
@@ -136,6 +140,7 @@ async def rerun_module(
     assessment = result.scalar_one_or_none()
     if not assessment:
         raise HTTPException(status_code=404, detail="Assessment not found")
+    _require_owner_or_admin(assessment, current_user)
     if assessment.status == AssessmentStatus.RUNNING:
         raise HTTPException(status_code=400, detail="Assessment is already running")
     try:
@@ -155,6 +160,7 @@ async def rerun_assessment(
     assessment = result.scalar_one_or_none()
     if not assessment:
         raise HTTPException(status_code=404, detail="Assessment not found")
+    _require_owner_or_admin(assessment, current_user)
     if assessment.status in (AssessmentStatus.PENDING, AssessmentStatus.CONFIRMING, AssessmentStatus.RUNNING):
         raise HTTPException(status_code=400, detail="Assessment is already running")
 
@@ -223,6 +229,7 @@ async def delete_assessment(
     assessment = result.scalar_one_or_none()
     if not assessment:
         raise HTTPException(status_code=404, detail="Assessment not found")
+    _require_owner_or_admin(assessment, current_user)
     if assessment.celery_task_id:
         try:
             celery_app.control.revoke(assessment.celery_task_id, terminate=True, signal="SIGTERM")
