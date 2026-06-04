@@ -30,6 +30,7 @@ class AssessmentOut(BaseModel):
     status: AssessmentStatus
     review_mode: ReviewMode
     project_scope: str | None
+    executive_summary: str | None
     overall_score: float | None
     overall_rag: RAGStatus | None
     recommendation: Recommendation | None

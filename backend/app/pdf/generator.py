@@ -62,6 +62,7 @@ def generate_pdf(assessment) -> bytes:
         "recommendation": RECOMMENDATION_LABELS.get(rec, rec.upper()),
         "recommendation_colour": RECOMMENDATION_COLOURS.get(rec, "#999"),
         "findings": findings_data,
+        "executive_summary": assessment.executive_summary or "",
         "generated_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"),
     }
 

@@ -218,6 +218,8 @@ async def _run_modules(assessment_uuid, db, ai_client, assessment):
     overall = aggregate_scores(scores, weight_map)
     overall_rag = score_to_rag(overall)
 
+    exec_summary = await _generate_executive_summary(assessment, scores, ai_client)
+
     async with worker_db() as final_db:
         r = await final_db.execute(select(Assessment).where(Assessment.id == assessment_uuid))
         a = r.scalar_one_or_none()
@@ -225,5 +227,43 @@ async def _run_modules(assessment_uuid, db, ai_client, assessment):
             a.overall_score = overall
             a.overall_rag = overall_rag
             a.recommendation = derive_recommendation(overall_rag)
+            a.executive_summary = exec_summary
             a.status = AssessmentStatus.COMPLETE
         await final_db.commit()
+
+
+async def _generate_executive_summary(assessment, scores: dict, ai_client) -> str:
+    category_labels = {
+        "vendor_trust": "Vendor Trust",
+        "cve": "CVE History",
+        "maintenance": "Maintenance",
+        "dependency": "Dependency Risk",
+        "encryption": "Encryption",
+        "logging": "Logging & Monitoring",
+        "data_exfiltration": "Data Exfiltration Risk",
+        "third_party": "Third-Party Integrations",
+    }
+    scores_text = "\n".join(
+        f"- {category_labels.get(k, k)}: {v:.1f}/10" for k, v in sorted(scores.items())
+    )
+    scope_text = f"\nProject scope context: {assessment.project_scope}" if assessment.project_scope else ""
+    prompt = f"""Write a concise executive summary for a security assessment of {assessment.product_name}.{scope_text}
+
+Module scores:
+{scores_text}
+
+Overall score: {aggregate_scores(scores, {k.value: v for k, v in DEFAULT_WEIGHTS.items()}):.1f}/10
+
+Write 3-4 paragraphs suitable for a non-technical decision-maker:
+1. Opening: overall security posture and recommendation
+2. Key strengths (highest-scoring areas)
+3. Key concerns (lowest-scoring areas and their business risk)
+4. Closing: recommended next steps or conditions for approval
+
+Be direct and specific. Avoid generic filler. Reference actual module scores where relevant."""
+
+    try:
+        return await ai_client.complete(prompt, system="You are a senior security consultant writing an executive summary for a board-level audience. Be precise, direct, and actionable.")
+    except Exception as e:
+        logger.error(f"Failed to generate executive summary: {e}")
+        return ""

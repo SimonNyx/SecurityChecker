@@ -32,6 +32,7 @@
   .score-cell { font-weight: bold; font-size: 12pt; }
 
   .section-title { font-size: 13pt; font-weight: bold; color: #1e40af; margin-bottom: 10px; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; }
+  .exec-summary { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 6px; padding: 14px 16px; margin-bottom: 24px; font-size: 10.5pt; line-height: 1.7; white-space: pre-wrap; }
 
   .footer { position: fixed; bottom: 0; left: 0; right: 0; font-size: 8pt; color: #9ca3af; border-top: 1px solid #e5e7eb; padding: 6px 15mm; display: flex; justify-content: space-between; }
 </style>
@@ -65,6 +66,11 @@
     <div class="verdict-text">{{ recommendation }}</div>
   </div>
 </div>
+
+{% if executive_summary %}
+<div class="section-title">Executive Summary</div>
+<div class="exec-summary">{{ executive_summary }}</div>
+{% endif %}
 
 <div class="section-title">Module Results</div>
 <table>

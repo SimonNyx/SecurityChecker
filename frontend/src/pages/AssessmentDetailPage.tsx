@@ -203,6 +203,15 @@ export default function AssessmentDetailPage() {
             </div>
           </div>
 
+          {assessment.executive_summary && (
+            <div className="bg-white border border-gray-200 rounded-xl p-6">
+              <h3 className="font-semibold text-gray-900 mb-3">Executive Summary</h3>
+              <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+                {assessment.executive_summary}
+              </div>
+            </div>
+          )}
+
           <div className="space-y-2">
             <h3 className="font-semibold text-gray-900">Module Findings</h3>
             {(assessment.findings ?? []).map(f => (
