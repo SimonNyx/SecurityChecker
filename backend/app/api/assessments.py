@@ -62,7 +62,7 @@ async def create_assessment(
 
     # Enqueue Celery job (no-op stub until Plan 2)
     try:
-        celery_app.send_task("app.worker.tasks.run_assessment", args=[str(assessment.id)])
+        celery_app.send_task("run_assessment", args=[str(assessment.id)])
     except Exception:
         pass  # Celery not running in tests
 
@@ -109,7 +109,7 @@ async def confirm_product(
     await db.refresh(assessment)
 
     try:
-        celery_app.send_task("app.worker.tasks.run_analysis", args=[str(assessment_id)])
+        celery_app.send_task("run_analysis", args=[str(assessment_id)])
     except Exception:
         pass
 

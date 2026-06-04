@@ -151,3 +151,59 @@ async def test_council_falls_back_on_bad_chairman_json():
 
     # Falls back to average of advisor scores
     assert result.score == 6.0
+
+
+async def test_run_modules_orchestration():
+    """Smoke test that _run_modules wires all modules and persists findings."""
+    from unittest.mock import AsyncMock, MagicMock, patch
+    from app.worker.tasks import _run_modules
+    from app.models.assessment import Assessment, InputType, ReviewMode, AssessmentStatus, RAGStatus
+    from app.worker.ai_client import AIClient
+    import uuid
+
+    assessment_id = uuid.uuid4()
+    assessment = Assessment(
+        id=assessment_id,
+        product_name="TestProduct",
+        input_type=InputType.NAME,
+        review_mode=ReviewMode.STANDARD,
+        status=AssessmentStatus.RUNNING,
+        submitted_by=uuid.uuid4(),
+    )
+
+    config = {"provider": "openwebui", "base_url": "http://x", "api_key": "", "model_name": "m"}
+    ai_client = AIClient(config)
+    ai_client.complete = AsyncMock(
+        return_value='{"score": 7.0, "summary": "OK.", "findings": {}}'
+    )
+
+    mock_db = MagicMock()
+    mock_db.add = MagicMock()
+    mock_db.commit = AsyncMock()
+
+    findings_added = []
+    def capture_add(obj):
+        findings_added.append(obj)
+    mock_db.add.side_effect = capture_add
+
+    # Patch worker_db used in _run_modules final update
+    async def mock_worker_db_ctx():
+        yield mock_db
+
+    with patch("app.worker.tasks.worker_db") as mock_wdb:
+        mock_wdb.return_value.__aenter__ = AsyncMock(return_value=mock_db)
+        mock_wdb.return_value.__aexit__ = AsyncMock(return_value=False)
+
+        # Patch select + scalar_one_or_none for final update
+        from unittest.mock import AsyncMock as AM
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none = MagicMock(return_value=assessment)
+        mock_db.execute = AsyncMock(return_value=mock_result)
+
+        await _run_modules(assessment_id, mock_db, ai_client, assessment)
+
+    # 8 findings should have been added
+    from app.models.finding import AssessmentFinding
+    findings = [f for f in findings_added if isinstance(f, AssessmentFinding)]
+    assert len(findings) == 8
+    assert all(f.score == 7.0 for f in findings)
