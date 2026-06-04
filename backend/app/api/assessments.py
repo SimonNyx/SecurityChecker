@@ -162,6 +162,8 @@ async def rerun_assessment(
         await db.delete(f)
 
     assessment.review_mode = body.review_mode
+    if body.project_scope is not None:
+        assessment.project_scope = body.project_scope
     assessment.status = AssessmentStatus.RUNNING
     assessment.overall_score = None
     assessment.overall_rag = None

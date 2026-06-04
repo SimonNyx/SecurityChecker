@@ -18,6 +18,7 @@ class ProductConfirmRequest(BaseModel):
 
 class RerunRequest(BaseModel):
     review_mode: ReviewMode
+    project_scope: str | None = None
 
 class AssessmentOut(BaseModel):
     model_config = {"from_attributes": True}
