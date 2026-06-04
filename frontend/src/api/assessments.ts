@@ -25,6 +25,12 @@ export async function deleteAssessment(id: string): Promise<void> {
   await client.delete(`/assessments/${id}`)
 }
 
-export function getPdfUrl(id: string): string {
-  return `/api/v1/assessments/${id}/pdf`
+export async function downloadPdf(id: string, productName: string): Promise<void> {
+  const { data } = await client.get<Blob>(`/assessments/${id}/pdf`, { responseType: 'blob' })
+  const url = URL.createObjectURL(data)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `security-report-${productName.toLowerCase().replace(/\s+/g, '-')}.pdf`
+  a.click()
+  URL.revokeObjectURL(url)
 }

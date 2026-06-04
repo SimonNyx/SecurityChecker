@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { getAssessment, confirmProduct, getPdfUrl } from '../api/assessments'
+import { getAssessment, confirmProduct, downloadPdf } from '../api/assessments'
 import RAGBadge from '../components/RAGBadge'
 import FindingCard from '../components/FindingCard'
 
@@ -61,14 +61,12 @@ export default function AssessmentDetailPage() {
           </p>
         </div>
         {assessment.status === 'complete' && (
-          <a
-            href={getPdfUrl(assessment.id)}
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            onClick={() => downloadPdf(assessment.id, assessment.product_name)}
             className="bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50"
           >
             Download PDF
-          </a>
+          </button>
         )}
       </div>
 
