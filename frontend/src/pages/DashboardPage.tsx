@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { listAssessments, deleteAssessment } from '../api/assessments'
 import RAGBadge from '../components/RAGBadge'
 import ScoreBar from '../components/ScoreBar'
+import ElapsedTimer from '../components/ElapsedTimer'
 
 const STATUS_LABELS: Record<string, string> = {
   pending: 'Pending',
@@ -19,6 +20,17 @@ const STATUS_COLOURS: Record<string, string> = {
   running: 'text-blue-600 animate-pulse',
   complete: 'text-green-700',
   failed: 'text-red-600',
+}
+
+const MODULE_LABELS: Record<string, string> = {
+  vendor_trust: 'Vendor Trust',
+  cve: 'CVE History',
+  maintenance: 'Maintenance',
+  dependency: 'Dependency Risk',
+  encryption: 'Encryption',
+  logging: 'Logging & Monitoring',
+  data_exfiltration: 'Data Exfiltration Risk',
+  third_party: 'Third-Party Integrations',
 }
 
 const RECOMMENDATION_LABELS: Record<string, string> = {
@@ -103,21 +115,40 @@ export default function DashboardPage() {
           <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">In Progress</h3>
           <div className="space-y-2">
             {inProgress.map(a => (
-              <div key={a.id} className="bg-white border border-gray-200 rounded-lg px-4 py-3 flex items-center gap-4">
-                <div className="flex-1">
-                  <Link to={`/assessments/${a.id}`} className="font-medium text-blue-700 hover:underline text-sm">
-                    {a.product_name}
-                  </Link>
+              <div key={a.id} className="bg-white border border-gray-200 rounded-lg px-4 py-3">
+                <div className="flex items-center gap-4">
+                  <div className="flex-1">
+                    <Link to={`/assessments/${a.id}`} className="font-medium text-blue-700 hover:underline text-sm">
+                      {a.product_name}
+                    </Link>
+                  </div>
+                  <span className={`text-xs font-medium ${STATUS_COLOURS[a.status]}`}>
+                    {STATUS_LABELS[a.status]}
+                  </span>
+                  {(a.status === 'running' || a.status === 'confirming' || a.status === 'pending') && (
+                    <ElapsedTimer since={a.created_at} className="text-xs text-gray-400" />
+                  )}
+                  <button
+                    onClick={() => handleDelete(a.id, a.product_name)}
+                    className="text-xs text-red-500 hover:text-red-700"
+                  >
+                    Delete
+                  </button>
                 </div>
-                <span className={`text-xs font-medium ${STATUS_COLOURS[a.status]}`}>
-                  {STATUS_LABELS[a.status]}
-                </span>
-                <button
-                  onClick={() => handleDelete(a.id, a.product_name)}
-                  className="text-xs text-red-500 hover:text-red-700 ml-2"
-                >
-                  Delete
-                </button>
+                {a.status === 'running' && a.progress_total > 0 && (
+                  <div className="mt-2">
+                    <div className="flex justify-between text-xs text-gray-400 mb-1">
+                      <span>{a.current_module ? `Running: ${MODULE_LABELS[a.current_module] ?? a.current_module}` : `${a.progress_current} / ${a.progress_total} modules`}</span>
+                      <span>{a.progress_current} / {a.progress_total}</span>
+                    </div>
+                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                        style={{ width: `${(a.progress_current / a.progress_total) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -186,7 +217,7 @@ export default function DashboardPage() {
                       {a.submitted_by_name ?? '—'}
                     </td>
                     <td className="px-4 py-3 text-gray-500">
-                      {new Date(a.created_at).toLocaleDateString()}
+                      {new Date(a.created_at).toLocaleDateString('en-GB')}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <button

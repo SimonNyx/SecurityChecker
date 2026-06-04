@@ -5,6 +5,18 @@ import { getAssessment, confirmProduct, downloadPdf, deleteAssessment, rerunAsse
 import type { ReviewMode } from '../types'
 import RAGBadge from '../components/RAGBadge'
 import FindingCard from '../components/FindingCard'
+import ElapsedTimer from '../components/ElapsedTimer'
+
+const MODULE_LABELS: Record<string, string> = {
+  vendor_trust: 'Vendor Trust',
+  cve: 'CVE History',
+  maintenance: 'Maintenance',
+  dependency: 'Dependency Risk',
+  encryption: 'Encryption',
+  logging: 'Logging & Monitoring',
+  data_exfiltration: 'Data Exfiltration Risk',
+  third_party: 'Third-Party Integrations',
+}
 
 const STATUS_LABELS: Record<string, string> = {
   pending: 'Pending', confirming: 'Awaiting Confirmation', running: 'Running…', complete: 'Complete', failed: 'Failed',
@@ -81,7 +93,7 @@ export default function AssessmentDetailPage() {
           </button>
           <h2 className="text-2xl font-bold text-gray-900">{assessment.product_name}</h2>
           <p className="text-sm text-gray-500 mt-1">
-            {STATUS_LABELS[assessment.status]} &middot; {assessment.review_mode === 'deep_review' ? 'Deep Review' : 'Standard'} &middot; {new Date(assessment.created_at).toLocaleDateString()}
+            {STATUS_LABELS[assessment.status]} &middot; {assessment.review_mode === 'deep_review' ? 'Deep Review' : 'Standard'} &middot; {new Date(assessment.created_at).toLocaleDateString('en-GB')}
             {assessment.submitted_by_name && <> &middot; Submitted by <span className="font-medium text-gray-700">{assessment.submitted_by_name}</span></>}
           </p>
           {assessment.project_scope && (
@@ -152,9 +164,31 @@ export default function AssessmentDetailPage() {
 
       {/* Running state */}
       {(assessment.status === 'running' || assessment.status === 'pending') && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 text-center">
-          <div className="animate-pulse text-blue-600 font-medium">Analysis in progress…</div>
-          <p className="text-sm text-blue-500 mt-1">This page refreshes automatically.</p>
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+          <div className="flex items-center justify-between mb-3">
+            <div className="animate-pulse text-blue-600 font-medium">Analysis in progress…</div>
+            <ElapsedTimer since={assessment.created_at} className="text-sm text-blue-400" />
+          </div>
+          {assessment.status === 'running' && assessment.progress_total > 0 ? (
+            <>
+              <div className="flex justify-between text-sm text-blue-500 mb-2">
+                <span>
+                  {assessment.current_module
+                    ? `Running: ${MODULE_LABELS[assessment.current_module] ?? assessment.current_module}`
+                    : `${assessment.progress_current} of ${assessment.progress_total} modules complete`}
+                </span>
+                <span>{assessment.progress_current} / {assessment.progress_total}</span>
+              </div>
+              <div className="h-2 bg-blue-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                  style={{ width: `${(assessment.progress_current / assessment.progress_total) * 100}%` }}
+                />
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-blue-500">This page refreshes automatically.</p>
+          )}
         </div>
       )}
 
