@@ -53,6 +53,7 @@ class Assessment(Base):
     progress_total: Mapped[int] = mapped_column(default=0, server_default="0")
     current_module: Mapped[str | None] = mapped_column(String, nullable=True)
     celery_task_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    run_started_at: Mapped[datetime | None] = mapped_column(nullable=True)
     overall_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     overall_rag: Mapped[RAGStatus | None] = mapped_column(SAEnum(RAGStatus, name="rag_status_enum"), nullable=True)
     recommendation: Mapped[Recommendation | None] = mapped_column(
@@ -74,4 +75,8 @@ class Assessment(Base):
     findings: Mapped[list["AssessmentFinding"]] = relationship(back_populates="assessment", lazy="selectin", cascade="all, delete-orphan")
     product_confirmation: Mapped["ProductConfirmation | None"] = relationship(
         back_populates="assessment", uselist=False, lazy="selectin", cascade="all, delete-orphan"
+    )
+    runs: Mapped[list["AssessmentRun"]] = relationship(
+        "AssessmentRun", foreign_keys="AssessmentRun.assessment_id",
+        order_by="AssessmentRun.run_at.desc()", lazy="selectin", cascade="all, delete-orphan"
     )

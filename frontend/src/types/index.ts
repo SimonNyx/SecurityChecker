@@ -36,6 +36,17 @@ export interface AssessmentFinding {
   edited_at: string | null
 }
 
+export interface AssessmentRun {
+  id: string
+  run_at: string
+  run_by: string
+  run_by_name: string | null
+  review_mode: ReviewMode
+  overall_score: number | null
+  overall_rag: RAGStatus | null
+  recommendation: Recommendation | null
+}
+
 export interface Assessment {
   id: string
   product_name: string
@@ -54,9 +65,11 @@ export interface Assessment {
   recommendation: Recommendation | null
   submitted_by: string
   submitted_by_name: string | null
+  run_started_at: string | null
   created_at: string
   updated_at: string
   findings: AssessmentFinding[]
+  runs: AssessmentRun[]
 }
 
 export interface AssessmentCreate {

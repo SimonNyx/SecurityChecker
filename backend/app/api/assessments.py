@@ -12,6 +12,7 @@ from app.models.assessment import Assessment, InputType, AssessmentStatus
 from app.models.finding import AssessmentFinding, Category
 from app.models.product_confirmation import ProductConfirmation
 from app.schemas.assessment import AssessmentCreate, AssessmentOut, ProductConfirmRequest, RerunRequest
+from app.models.assessment_run import AssessmentRun
 from app.schemas.finding import FindingOut, FindingUpdate
 from app.api.deps import get_current_user
 from app.core.rbac import require_role
@@ -71,6 +72,7 @@ async def create_assessment(
     except Exception as e:
         logger.error(f"Failed to dispatch run_assessment for {assessment.id}: {e}")
 
+    await db.refresh(assessment)
     return assessment
 
 @router.get("/{assessment_id}", response_model=AssessmentOut)
@@ -156,10 +158,28 @@ async def rerun_assessment(
     if assessment.status in (AssessmentStatus.PENDING, AssessmentStatus.CONFIRMING, AssessmentStatus.RUNNING):
         raise HTTPException(status_code=400, detail="Assessment is already running")
 
+    # Snapshot current results before clearing
+    if assessment.overall_score is not None:
+        run = AssessmentRun(
+            assessment_id=assessment_id,
+            run_by=current_user.id,
+            review_mode=assessment.review_mode,
+            overall_score=assessment.overall_score,
+            overall_rag=assessment.overall_rag,
+            recommendation=assessment.recommendation,
+        )
+        db.add(run)
+        await db.flush()
+        # Prune to last 3
+        all_runs = (await db.execute(
+            select(AssessmentRun)
+            .where(AssessmentRun.assessment_id == assessment_id)
+            .order_by(AssessmentRun.run_at.desc())
+        )).scalars().all()
+        for old_run in all_runs[3:]:
+            await db.delete(old_run)
+
     # Clear previous results
-    await db.execute(
-        select(AssessmentFinding).where(AssessmentFinding.assessment_id == assessment_id)
-    )
     existing_findings = (await db.execute(
         select(AssessmentFinding).where(AssessmentFinding.assessment_id == assessment_id)
     )).scalars().all()
@@ -173,6 +193,7 @@ async def rerun_assessment(
     assessment.overall_score = None
     assessment.overall_rag = None
     assessment.recommendation = None
+    assessment.run_started_at = datetime.now(timezone.utc)
     await db.commit()
     await db.refresh(assessment)
     await log_action(db, current_user.id, "rerun_assessment", "assessment", assessment_id,
@@ -183,10 +204,10 @@ async def rerun_assessment(
         task = celery_app.send_task("run_analysis", args=[str(assessment_id)])
         assessment.celery_task_id = task.id
         await db.commit()
-        await db.refresh(assessment)
     except Exception as e:
         logger.error(f"Failed to dispatch run_analysis for {assessment_id}: {e}")
 
+    await db.refresh(assessment)
     return assessment
 
 @router.delete("/{assessment_id}", status_code=status.HTTP_204_NO_CONTENT)

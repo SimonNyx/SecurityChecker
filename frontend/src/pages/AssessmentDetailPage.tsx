@@ -7,6 +7,65 @@ import RAGBadge from '../components/RAGBadge'
 import FindingCard from '../components/FindingCard'
 import ElapsedTimer from '../components/ElapsedTimer'
 
+const SECTION_PATTERNS: [RegExp, string][] = [
+  [/overall\s+posture/i, 'Overall Posture'],
+  [/key\s+strengths?/i, 'Key Strengths'],
+  [/key\s+concerns?/i, 'Key Concerns'],
+  [/recommended?\s+next\s+steps?/i, 'Recommended Next Steps'],
+]
+
+function matchSection(line: string): string | null {
+  const clean = line.replace(/^[#*\s]+|[#*\s]+$/g, '').trim()
+  for (const [pattern, label] of SECTION_PATTERNS) {
+    if (pattern.test(clean)) return label
+  }
+  return null
+}
+
+function ExecSummary({ text }: { text: string }) {
+  const sections: { heading: string; lines: string[] }[] = []
+  let current: { heading: string; lines: string[] } | null = null
+
+  for (const raw of text.split('\n')) {
+    const line = raw.trim()
+    if (!line) continue
+    const matched = matchSection(line)
+    if (matched) {
+      if (current) sections.push(current)
+      current = { heading: matched, lines: [] }
+    } else if (current) {
+      current.lines.push(line)
+    }
+  }
+  if (current) sections.push(current)
+
+  if (sections.length === 0) {
+    return <p className="text-sm text-gray-700 leading-relaxed">{text}</p>
+  }
+
+  return (
+    <div className="space-y-4">
+      {sections.map(s => (
+        <div key={s.heading}>
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">{s.heading}</h4>
+          {s.lines[0]?.startsWith('-') ? (
+            <ul className="space-y-1">
+              {s.lines.map((l, i) => (
+                <li key={i} className="text-sm text-gray-700 flex gap-2">
+                  <span className="text-gray-400 mt-0.5">•</span>
+                  <span>{l.replace(/^[-•]\s*/, '')}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-gray-700 leading-relaxed">{s.lines.join(' ')}</p>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 const MODULE_LABELS: Record<string, string> = {
   vendor_trust: 'Vendor Trust',
   cve: 'CVE History',
@@ -105,7 +164,10 @@ export default function AssessmentDetailPage() {
         <div className="flex items-center gap-2">
           {(assessment.status === 'complete' || assessment.status === 'failed') && (
             <button
-              onClick={() => rerunMut.mutate()}
+              onClick={() => {
+                if (!window.confirm(`Re-run assessment for "${assessment.product_name}"? This will clear all existing findings and scores.`)) return
+                rerunMut.mutate()
+              }}
               disabled={rerunMut.isPending}
               className="bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 disabled:opacity-50"
             >
@@ -167,7 +229,7 @@ export default function AssessmentDetailPage() {
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
           <div className="flex items-center justify-between mb-3">
             <div className="animate-pulse text-blue-600 font-medium">Analysis in progress…</div>
-            <ElapsedTimer since={assessment.created_at} className="text-sm text-blue-400" />
+            <ElapsedTimer since={assessment.run_started_at ?? assessment.created_at} className="text-sm text-blue-400" />
           </div>
           {assessment.status === 'running' && assessment.progress_total > 0 ? (
             <>
@@ -240,10 +302,8 @@ export default function AssessmentDetailPage() {
 
           {assessment.executive_summary && (
             <div className="bg-white border border-gray-200 rounded-xl p-6">
-              <h3 className="font-semibold text-gray-900 mb-3">Executive Summary</h3>
-              <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
-                {assessment.executive_summary}
-              </div>
+              <h3 className="font-semibold text-gray-900 mb-4">Executive Summary</h3>
+              <ExecSummary text={assessment.executive_summary} />
             </div>
           )}
 
@@ -260,6 +320,39 @@ export default function AssessmentDetailPage() {
         <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-red-700 text-sm">
           Assessment failed. Please try again or contact your administrator.
         </div>
+      )}
+
+      {/* Run history */}
+      {assessment.runs.length > 0 && (
+        <section>
+          <h3 className="font-semibold text-gray-900 mb-3">Previous Runs</h3>
+          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Date</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Re-run By</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Mode</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Score</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-600">RAG</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-600">Recommendation</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {assessment.runs.map(r => (
+                  <tr key={r.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-gray-500">{new Date(r.run_at.endsWith('Z') ? r.run_at : r.run_at + 'Z').toLocaleDateString('en-GB')}</td>
+                    <td className="px-4 py-3 text-gray-700">{r.run_by_name ?? '—'}</td>
+                    <td className="px-4 py-3 text-gray-500">{r.review_mode === 'deep_review' ? 'Deep' : 'Standard'}</td>
+                    <td className="px-4 py-3 font-medium text-gray-700">{r.overall_score != null ? `${r.overall_score.toFixed(1)}/10` : '—'}</td>
+                    <td className="px-4 py-3">{r.overall_rag ? <RAGBadge rag={r.overall_rag} /> : '—'}</td>
+                    <td className="px-4 py-3 text-gray-500 capitalize">{r.recommendation ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
       )}
     </div>
   )

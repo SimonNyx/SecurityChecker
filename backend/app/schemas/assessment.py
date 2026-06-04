@@ -4,6 +4,18 @@ from pydantic import BaseModel
 from app.models.assessment import InputType, AssessmentStatus, RAGStatus, Recommendation, ReviewMode
 from app.schemas.finding import FindingOut
 
+
+class AssessmentRunOut(BaseModel):
+    model_config = {"from_attributes": True}
+    id: uuid.UUID
+    run_at: datetime
+    run_by: uuid.UUID
+    run_by_name: str | None = None
+    review_mode: ReviewMode
+    overall_score: float | None
+    overall_rag: RAGStatus | None
+    recommendation: Recommendation | None
+
 class AssessmentCreate(BaseModel):
     product_name: str
     product_url: str | None = None
@@ -39,6 +51,8 @@ class AssessmentOut(BaseModel):
     recommendation: Recommendation | None
     submitted_by: uuid.UUID
     submitted_by_name: str | None = None
+    run_started_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
     findings: list[FindingOut] = []
+    runs: list[AssessmentRunOut] = []
