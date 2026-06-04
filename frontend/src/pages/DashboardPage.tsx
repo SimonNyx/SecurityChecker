@@ -170,7 +170,7 @@ export default function DashboardPage() {
                       </Link>
                     </td>
                     <td className="px-4 py-3 w-40">
-                      {a.overall_score !== null ? <ScoreBar score={a.overall_score} /> : '—'}
+                      {a.overall_score != null ? <ScoreBar score={a.overall_score} /> : '—'}
                     </td>
                     <td className="px-4 py-3">
                       {a.overall_rag ? <RAGBadge rag={a.overall_rag} /> : '—'}

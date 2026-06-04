@@ -1,7 +1,8 @@
 const colour = (score: number) =>
   score >= 7.5 ? 'bg-green-500' : score >= 5 ? 'bg-amber-400' : 'bg-red-500'
 
-export default function ScoreBar({ score }: { score: number }) {
+export default function ScoreBar({ score }: { score: number | null | undefined }) {
+  if (score == null) return <span className="text-sm text-gray-400">—</span>
   const pct = Math.min(100, Math.max(0, (score / 10) * 100))
   return (
     <div className="flex items-center gap-2">
