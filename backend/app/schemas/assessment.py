@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 from pydantic import BaseModel
 from app.models.assessment import InputType, AssessmentStatus, RAGStatus, Recommendation, ReviewMode
+from app.schemas.finding import FindingOut
 
 class AssessmentCreate(BaseModel):
     product_name: str
@@ -29,3 +30,4 @@ class AssessmentOut(BaseModel):
     submitted_by: uuid.UUID
     created_at: datetime
     updated_at: datetime
+    findings: list[FindingOut] = []
