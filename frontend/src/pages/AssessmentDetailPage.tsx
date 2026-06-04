@@ -51,11 +51,15 @@ export default function AssessmentDetailPage() {
   })
 
   const [rerunMode, setRerunMode] = useState<ReviewMode>('standard')
+  const [rerunScope, setRerunScope] = useState('')
   useEffect(() => {
-    if (assessment) setRerunMode(assessment.review_mode)
+    if (assessment) {
+      setRerunMode(assessment.review_mode)
+      setRerunScope(assessment.project_scope ?? '')
+    }
   }, [assessment?.id])
   const rerunMut = useMutation({
-    mutationFn: () => rerunAssessment(id!, rerunMode),
+    mutationFn: () => rerunAssessment(id!, rerunMode, rerunScope || undefined),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['assessment', id] }),
   })
 
@@ -87,23 +91,13 @@ export default function AssessmentDetailPage() {
         </div>
         <div className="flex items-center gap-2">
           {(assessment.status === 'complete' || assessment.status === 'failed') && (
-            <>
-              <select
-                value={rerunMode}
-                onChange={e => setRerunMode(e.target.value as ReviewMode)}
-                className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-300"
-              >
-                <option value="standard">Standard</option>
-                <option value="deep_review">Deep Review</option>
-              </select>
-              <button
-                onClick={() => rerunMut.mutate()}
-                disabled={rerunMut.isPending}
-                className="bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 disabled:opacity-50"
-              >
-                {rerunMut.isPending ? 'Starting…' : 'Re-run'}
-              </button>
-            </>
+            <button
+              onClick={() => rerunMut.mutate()}
+              disabled={rerunMut.isPending}
+              className="bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 disabled:opacity-50"
+            >
+              {rerunMut.isPending ? 'Starting…' : 'Re-run'}
+            </button>
           )}
           {assessment.status === 'complete' && (
             <button
@@ -122,6 +116,38 @@ export default function AssessmentDetailPage() {
           </button>
         </div>
       </div>
+
+      {/* Re-run panel */}
+      {(assessment.status === 'complete' || assessment.status === 'failed') && (
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+          <h3 className="text-sm font-semibold text-gray-700">Re-run Assessment</h3>
+          <div className="grid grid-cols-2 gap-3 items-start">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-gray-600">Review Mode</label>
+              <select
+                value={rerunMode}
+                onChange={e => setRerunMode(e.target.value as ReviewMode)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-300"
+              >
+                <option value="standard">Standard</option>
+                <option value="deep_review">Deep Review</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-gray-600">
+                Project Scope <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <textarea
+                rows={2}
+                value={rerunScope}
+                onChange={e => setRerunScope(e.target.value)}
+                placeholder="Describe project nature to calibrate grading…"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Running state */}
       {(assessment.status === 'running' || assessment.status === 'pending') && (
