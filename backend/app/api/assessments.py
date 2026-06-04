@@ -193,7 +193,10 @@ async def rerun_assessment(
     assessment.overall_score = None
     assessment.overall_rag = None
     assessment.recommendation = None
-    assessment.run_started_at = datetime.now(timezone.utc)
+    assessment.run_started_at = datetime.utcnow()
+    assessment.progress_current = 0
+    assessment.progress_total = 0
+    assessment.current_module = None
     await db.commit()
     await db.refresh(assessment)
     await log_action(db, current_user.id, "rerun_assessment", "assessment", assessment_id,
