@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { getAssessment, confirmProduct, getPdfUrl } from '../api/assessments'
 import RAGBadge from '../components/RAGBadge'
-import ScoreBar from '../components/ScoreBar'
 import FindingCard from '../components/FindingCard'
 
 const STATUS_LABELS: Record<string, string> = {
