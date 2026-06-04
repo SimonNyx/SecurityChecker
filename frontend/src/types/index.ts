@@ -21,7 +21,6 @@ export interface User {
   full_name: string
   role: Role
   is_active: boolean
-  created_at: string
 }
 
 export interface AssessmentFinding {
@@ -73,7 +72,6 @@ export interface AIConfig {
   base_url: string
   model_name: string
   is_active: boolean
-  created_at: string
 }
 
 export interface AIConfigUpdate {

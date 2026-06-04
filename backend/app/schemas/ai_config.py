@@ -1,5 +1,4 @@
 import uuid
-from datetime import datetime
 from pydantic import BaseModel
 from app.models.ai_config import AIProvider
 
@@ -10,7 +9,6 @@ class AIConfigOut(BaseModel):
     base_url: str
     model_name: str
     is_active: bool
-    created_at: datetime
 
 class AIConfigUpdate(BaseModel):
     provider: AIProvider | None = None

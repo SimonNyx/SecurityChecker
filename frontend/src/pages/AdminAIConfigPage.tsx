@@ -117,9 +117,8 @@ export default function AdminAIConfigPage() {
       </div>
 
       {config && (
-        <div className="text-xs text-gray-400 space-y-1">
+        <div className="text-xs text-gray-400">
           <p>Active: {config.is_active ? 'Yes' : 'No'}</p>
-          <p>Last updated: {new Date(config.created_at).toLocaleDateString()}</p>
         </div>
       )}
     </div>
