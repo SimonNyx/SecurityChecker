@@ -174,7 +174,7 @@ export default function AssessmentDetailPage() {
 
           <div className="space-y-2">
             <h3 className="font-semibold text-gray-900">Module Findings</h3>
-            {assessment.findings.map(f => (
+            {(assessment.findings ?? []).map(f => (
               <FindingCard key={f.id} finding={f} />
             ))}
           </div>
