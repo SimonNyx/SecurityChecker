@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { listAssessments, deleteAssessment } from '../api/assessments'
 import RAGBadge from '../components/RAGBadge'
@@ -57,7 +58,11 @@ export default function DashboardPage() {
     return <div className="text-red-600 text-sm">Failed to load assessments.</div>
   }
 
+  const [search, setSearch] = useState('')
   const complete = assessments?.filter(a => a.status === 'complete') ?? []
+  const filtered = search.trim()
+    ? complete.filter(a => a.product_name.toLowerCase().includes(search.toLowerCase()))
+    : complete
   const inProgress = assessments?.filter(a => a.status !== 'complete' && a.status !== 'failed') ?? []
 
   return (
@@ -121,11 +126,26 @@ export default function DashboardPage() {
 
       {/* Complete assessments table */}
       <section>
-        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Completed</h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Completed</h3>
+          {complete.length > 0 && (
+            <input
+              type="search"
+              placeholder="Search by product name…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-300"
+            />
+          )}
+        </div>
         {complete.length === 0 ? (
           <div className="text-gray-400 text-sm py-8 text-center border border-dashed border-gray-200 rounded-lg">
             No completed assessments yet.{' '}
             <Link to="/assessments/new" className="text-blue-600 hover:underline">Run your first one.</Link>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-gray-400 text-sm py-8 text-center border border-dashed border-gray-200 rounded-lg">
+            No results for "{search}".
           </div>
         ) : (
           <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -142,7 +162,7 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {complete.map(a => (
+                {filtered.map(a => (
                   <tr key={a.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
                       <Link to={`/assessments/${a.id}`} className="font-medium text-blue-700 hover:underline">
