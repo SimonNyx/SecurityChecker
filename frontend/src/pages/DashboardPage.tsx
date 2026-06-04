@@ -63,7 +63,7 @@ export default function DashboardPage() {
   const filtered = search.trim()
     ? complete.filter(a => a.product_name.toLowerCase().includes(search.toLowerCase()))
     : complete
-  const inProgress = assessments?.filter(a => a.status !== 'complete' && a.status !== 'failed') ?? []
+  const inProgress = assessments?.filter(a => a.status !== 'complete') ?? []
 
   return (
     <div className="space-y-8">
