@@ -32,7 +32,7 @@ def _derive_input_type(body: AssessmentCreate) -> InputType:
 async def list_assessments(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role(Role.VIEWER)),
-    status_filter: str | None = None,
+    status_filter: AssessmentStatus | None = None,
     skip: int = 0,
     limit: int = 50,
 ):
