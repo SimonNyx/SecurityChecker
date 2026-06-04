@@ -34,11 +34,14 @@ def _run_pip_audit(repo_path: str) -> dict:
         return {}
 
 def _clone_repo(repo_url: str, target_dir: str) -> bool:
-    result = subprocess.run(
-        ["git", "clone", "--depth", "1", repo_url, target_dir],
-        capture_output=True, timeout=120
-    )
-    return result.returncode == 0
+    try:
+        result = subprocess.run(
+            ["git", "clone", "--depth", "1", repo_url, target_dir],
+            capture_output=True, timeout=120
+        )
+        return result.returncode == 0
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return False
 
 class DependencyModule(BaseModule):
     category = "dependency"
