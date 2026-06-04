@@ -117,6 +117,21 @@ async def confirm_product(
 
     return assessment
 
+@router.delete("/{assessment_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_assessment(
+    assessment_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role(Role.ANALYST)),
+):
+    result = await db.execute(select(Assessment).where(Assessment.id == assessment_id))
+    assessment = result.scalar_one_or_none()
+    if not assessment:
+        raise HTTPException(status_code=404, detail="Assessment not found")
+    await db.delete(assessment)
+    await db.commit()
+    await log_action(db, current_user.id, "delete_assessment", "assessment", assessment_id)
+    await db.commit()
+
 @router.put("/{assessment_id}/findings/{category}", response_model=FindingOut)
 async def update_finding(
     assessment_id: uuid.UUID,

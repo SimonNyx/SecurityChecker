@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { getAssessment, confirmProduct, downloadPdf } from '../api/assessments'
+import { getAssessment, confirmProduct, downloadPdf, deleteAssessment } from '../api/assessments'
 import RAGBadge from '../components/RAGBadge'
 import FindingCard from '../components/FindingCard'
 
@@ -44,6 +44,16 @@ export default function AssessmentDetailPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['assessment', id] }),
   })
 
+  const deleteMut = useMutation({
+    mutationFn: () => deleteAssessment(id!),
+    onSuccess: () => navigate('/'),
+  })
+
+  function handleDelete() {
+    if (!window.confirm(`Delete this assessment? This cannot be undone.`)) return
+    deleteMut.mutate()
+  }
+
   if (isLoading) return <div className="text-gray-400 text-sm">Loading…</div>
   if (isError || !assessment) return <div className="text-red-600 text-sm">Assessment not found.</div>
 
@@ -60,14 +70,23 @@ export default function AssessmentDetailPage() {
             {STATUS_LABELS[assessment.status]} &middot; {assessment.review_mode === 'deep_review' ? 'Deep Review' : 'Standard'} &middot; {new Date(assessment.created_at).toLocaleDateString()}
           </p>
         </div>
-        {assessment.status === 'complete' && (
+        <div className="flex gap-2">
+          {assessment.status === 'complete' && (
+            <button
+              onClick={() => downloadPdf(assessment.id, assessment.product_name)}
+              className="bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50"
+            >
+              Download PDF
+            </button>
+          )}
           <button
-            onClick={() => downloadPdf(assessment.id, assessment.product_name)}
-            className="bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50"
+            onClick={handleDelete}
+            disabled={deleteMut.isPending}
+            className="bg-white border border-red-200 text-red-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-50 disabled:opacity-50"
           >
-            Download PDF
+            Delete
           </button>
-        )}
+        </div>
       </div>
 
       {/* Running state */}

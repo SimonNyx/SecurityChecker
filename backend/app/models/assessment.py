@@ -59,7 +59,7 @@ class Assessment(Base):
         server_onupdate=text("now()"),
     )
 
-    findings: Mapped[list["AssessmentFinding"]] = relationship(back_populates="assessment", lazy="selectin")
+    findings: Mapped[list["AssessmentFinding"]] = relationship(back_populates="assessment", lazy="selectin", cascade="all, delete-orphan")
     product_confirmation: Mapped["ProductConfirmation | None"] = relationship(
-        back_populates="assessment", uselist=False, lazy="selectin"
+        back_populates="assessment", uselist=False, lazy="selectin", cascade="all, delete-orphan"
     )

@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { listAssessments } from '../api/assessments'
+import { listAssessments, deleteAssessment } from '../api/assessments'
 import RAGBadge from '../components/RAGBadge'
 import ScoreBar from '../components/ScoreBar'
 
@@ -27,6 +27,17 @@ const RECOMMENDATION_LABELS: Record<string, string> = {
 }
 
 export default function DashboardPage() {
+  const qc = useQueryClient()
+  const deleteMut = useMutation({
+    mutationFn: deleteAssessment,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['assessments'] }),
+  })
+
+  function handleDelete(id: string, name: string) {
+    if (!window.confirm(`Delete assessment for "${name}"? This cannot be undone.`)) return
+    deleteMut.mutate(id)
+  }
+
   const { data: assessments, isLoading, isError } = useQuery({
     queryKey: ['assessments'],
     queryFn: () => listAssessments({ limit: 50 }),
@@ -96,6 +107,12 @@ export default function DashboardPage() {
                 <span className={`text-xs font-medium ${STATUS_COLOURS[a.status]}`}>
                   {STATUS_LABELS[a.status]}
                 </span>
+                <button
+                  onClick={() => handleDelete(a.id, a.product_name)}
+                  className="text-xs text-red-500 hover:text-red-700 ml-2"
+                >
+                  Delete
+                </button>
               </div>
             ))}
           </div>
@@ -121,6 +138,7 @@ export default function DashboardPage() {
                   <th className="text-left px-4 py-3 font-semibold text-gray-600">Recommendation</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-600">Mode</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-600">Date</th>
+                  <th className="px-4 py-3" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -145,6 +163,14 @@ export default function DashboardPage() {
                     </td>
                     <td className="px-4 py-3 text-gray-500">
                       {new Date(a.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        onClick={() => handleDelete(a.id, a.product_name)}
+                        className="text-xs text-red-500 hover:text-red-700"
+                      >
+                        Delete
+                      </button>
                     </td>
                   </tr>
                 ))}
