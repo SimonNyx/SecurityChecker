@@ -46,6 +46,9 @@ export interface Assessment {
   review_mode: ReviewMode
   project_scope: string | null
   executive_summary: string | null
+  progress_current: number
+  progress_total: number
+  current_module: string | null
   overall_score: number | null
   overall_rag: RAGStatus | null
   recommendation: Recommendation | null

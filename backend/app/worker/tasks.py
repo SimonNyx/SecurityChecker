@@ -176,8 +176,17 @@ async def _run_analysis_async(assessment_id: str):
 async def _run_modules(assessment_uuid, db, ai_client, assessment):
     """Run all 8 modules and persist findings + overall score."""
     scores = {}
+    total = len(MODULE_MAP)
 
-    for ModuleClass, category in MODULE_MAP:
+    assessment.progress_total = total
+    assessment.progress_current = 0
+    assessment.current_module = None
+    await db.commit()
+
+    for i, (ModuleClass, category) in enumerate(MODULE_MAP):
+        assessment.current_module = category.value
+        await db.commit()
+
         try:
             module = ModuleClass(assessment, ai_client)
             if assessment.review_mode == ReviewMode.DEEP_REVIEW:
@@ -198,7 +207,6 @@ async def _run_modules(assessment_uuid, db, ai_client, assessment):
 
         except Exception as e:
             logger.error(f"Module {category.value} failed for {assessment_uuid}: {e}")
-            # Add a failed finding so the assessment can still complete
             from app.models.assessment import RAGStatus
             finding = AssessmentFinding(
                 assessment_id=assessment_uuid,
@@ -211,7 +219,9 @@ async def _run_modules(assessment_uuid, db, ai_client, assessment):
             db.add(finding)
             scores[category.value] = 0.0
 
-    await db.commit()
+        assessment.progress_current = i + 1
+        assessment.current_module = None
+        await db.commit()
 
     # Compute overall score
     weight_map = {k.value: v for k, v in DEFAULT_WEIGHTS.items()}
