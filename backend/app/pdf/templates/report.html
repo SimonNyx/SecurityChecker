@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Security Assessment Report — {{ product_name }}</title>
+<style>
+  @page { size: A4; margin: 20mm 15mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 11pt; color: #1f2937; line-height: 1.5; }
+
+  .header { border-bottom: 3px solid #1e40af; padding-bottom: 12px; margin-bottom: 20px; }
+  .header h1 { font-size: 20pt; color: #1e40af; }
+  .header .subtitle { font-size: 10pt; color: #6b7280; margin-top: 4px; }
+
+  .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; font-size: 10pt; }
+  .meta-item label { font-weight: bold; color: #374151; display: block; }
+  .meta-item span { color: #1f2937; }
+
+  .verdict-box { border: 2px solid {{ recommendation_colour }}; border-radius: 6px; padding: 14px 18px; margin-bottom: 24px; display: flex; align-items: center; gap: 20px; }
+  .verdict-label { font-size: 9pt; text-transform: uppercase; color: #6b7280; font-weight: bold; }
+  .verdict-text { font-size: 18pt; font-weight: bold; color: {{ recommendation_colour }}; }
+  .verdict-score { font-size: 28pt; font-weight: bold; color: {{ overall_rag_colour }}; }
+  .verdict-score-label { font-size: 9pt; color: #6b7280; }
+
+  .rag-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+
+  table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 10pt; }
+  th { background: #1e40af; color: white; padding: 8px 10px; text-align: left; font-weight: bold; }
+  td { padding: 8px 10px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+  tr:nth-child(even) td { background: #f9fafb; }
+
+  .score-cell { font-weight: bold; font-size: 12pt; }
+
+  .section-title { font-size: 13pt; font-weight: bold; color: #1e40af; margin-bottom: 10px; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; }
+
+  .footer { position: fixed; bottom: 0; left: 0; right: 0; font-size: 8pt; color: #9ca3af; border-top: 1px solid #e5e7eb; padding: 6px 15mm; display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Security Assessment Report</h1>
+  <div class="subtitle">{{ product_name }} &mdash; Generated {{ generated_at }}</div>
+</div>
+
+<div class="meta-grid">
+  <div class="meta-item"><label>Product</label><span>{{ product_name }}</span></div>
+  <div class="meta-item"><label>Review Mode</label><span>{{ review_mode }}</span></div>
+  <div class="meta-item"><label>Website</label><span>{{ product_url }}</span></div>
+  <div class="meta-item"><label>Repository</label><span>{{ repo_url }}</span></div>
+</div>
+
+<div class="verdict-box">
+  <div>
+    <div class="verdict-label">Overall Score</div>
+    <div class="verdict-score">{{ overall_score }}<span style="font-size:14pt">/10</span></div>
+    <div class="verdict-score-label">
+      <span class="rag-dot" style="background:{{ overall_rag_colour }}"></span>
+      {{ overall_rag | upper }}
+    </div>
+  </div>
+  <div style="border-left:1px solid #e5e7eb; height:60px; margin:0 10px;"></div>
+  <div>
+    <div class="verdict-label">Recommendation</div>
+    <div class="verdict-text">{{ recommendation }}</div>
+  </div>
+</div>
+
+<div class="section-title">Module Results</div>
+<table>
+  <thead>
+    <tr>
+      <th>Module</th>
+      <th style="width:70px">Score</th>
+      <th style="width:70px">RAG</th>
+      <th>Summary</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for f in findings %}
+    <tr>
+      <td><strong>{{ f.category }}</strong></td>
+      <td class="score-cell" style="color:{{ f.rag_colour }}">{{ f.score }}/10</td>
+      <td>
+        <span class="rag-dot" style="background:{{ f.rag_colour }}"></span>
+        {{ f.rag | upper }}
+      </td>
+      <td>{{ f.summary }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="footer">
+  <span>SecurityChecker &mdash; Confidential</span>
+  <span>{{ generated_at }}</span>
+</div>
+
+</body>
+</html>
