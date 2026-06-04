@@ -89,7 +89,9 @@ export default function DashboardPage() {
             {inProgress.map(a => (
               <div key={a.id} className="bg-white border border-gray-200 rounded-lg px-4 py-3 flex items-center gap-4">
                 <div className="flex-1">
-                  <span className="font-medium text-gray-900 text-sm">{a.product_name}</span>
+                  <Link to={`/assessments/${a.id}`} className="font-medium text-blue-700 hover:underline text-sm">
+                    {a.product_name}
+                  </Link>
                 </div>
                 <span className={`text-xs font-medium ${STATUS_COLOURS[a.status]}`}>
                   {STATUS_LABELS[a.status]}
