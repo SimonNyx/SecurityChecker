@@ -1,14 +1,16 @@
 import uuid
+from datetime import datetime
 from pydantic import BaseModel
 from app.models.ai_config import AIProvider
 
 class AIConfigOut(BaseModel):
-    model_config = {"from_attributes": True}
+    model_config = {"from_attributes": True, "protected_namespaces": ()}
     id: uuid.UUID
     provider: AIProvider
     base_url: str
     model_name: str
     is_active: bool
+    created_at: datetime
 
 class AIConfigUpdate(BaseModel):
     provider: AIProvider | None = None

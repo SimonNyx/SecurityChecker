@@ -28,7 +28,7 @@ services:
     command: >
       sh -c "alembic upgrade head &&
              PYTHONPATH=/app python scripts/seed.py &&
-             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/app"
     volumes:
       - ./backend:/app
     ports:
