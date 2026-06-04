@@ -10,6 +10,7 @@ class AIConfigOut(BaseModel):
     model_name: str
     is_active: bool
     has_api_key: bool = False
+    has_config: bool = False  # True only if a real DB row exists
 
     @classmethod
     def from_orm_with_key_flag(cls, obj) -> "AIConfigOut":
@@ -20,6 +21,7 @@ class AIConfigOut(BaseModel):
             model_name=obj.model_name,
             is_active=obj.is_active,
             has_api_key=bool(obj.api_key),
+            has_config=True,
         )
 
 class AIConfigUpdate(BaseModel):

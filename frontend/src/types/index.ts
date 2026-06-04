@@ -93,6 +93,7 @@ export interface AIConfig {
   model_name: string
   is_active: boolean
   has_api_key: boolean
+  has_config: boolean
 }
 
 export interface AIConfigUpdate {

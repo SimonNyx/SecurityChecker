@@ -53,14 +53,17 @@ function ProviderCard({ config, onSaved }: { config: AIConfig; onSaved: () => vo
           )}
         </div>
         {!config.is_active && (
-          <button
-            onClick={() => activateMut.mutate()}
-            disabled={activateMut.isPending || !config.base_url}
-            className="text-xs bg-gray-100 border border-gray-300 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-200 disabled:opacity-40"
-            title={!config.base_url ? 'Save settings first' : undefined}
-          >
-            {activateMut.isPending ? 'Activating…' : 'Set Active'}
-          </button>
+          config.has_config ? (
+            <button
+              onClick={() => activateMut.mutate()}
+              disabled={activateMut.isPending}
+              className="text-xs bg-gray-100 border border-gray-300 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-200 disabled:opacity-40"
+            >
+              {activateMut.isPending ? 'Activating…' : 'Set Active'}
+            </button>
+          ) : (
+            <span className="text-xs text-gray-400 italic">Save settings to activate</span>
+          )
         )}
       </div>
 
