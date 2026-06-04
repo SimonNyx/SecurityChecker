@@ -65,7 +65,7 @@ async def _run_assessment_async(assessment_id: str):
                 if not assessment.product_url and product_info.get("url"):
                     assessment.product_url = product_info["url"]
                 assessment.status = AssessmentStatus.RUNNING
-                assessment.run_started_at = datetime.now(timezone.utc)
+                assessment.run_started_at = datetime.utcnow()
                 await db.commit()
                 await _run_modules(assessment_uuid, db, ai_client, assessment)
             else:
@@ -167,11 +167,12 @@ async def _run_analysis_async(assessment_id: str):
         try:
             ai_client = await get_ai_client_from_db()
             assessment.status = AssessmentStatus.RUNNING
-            assessment.run_started_at = datetime.now(timezone.utc)
+            assessment.run_started_at = datetime.utcnow()
             await db.commit()
             await _run_modules(assessment_uuid, db, ai_client, assessment)
         except Exception as e:
             logger.exception(f"run_analysis {assessment_id} failed: {e}")
+            await db.rollback()
             assessment.status = AssessmentStatus.FAILED
             await db.commit()
 
