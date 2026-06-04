@@ -82,7 +82,7 @@ async def get_assessment(
         raise HTTPException(status_code=404, detail="Assessment not found")
     return assessment
 
-@router.post("/{assessment_id}/confirm-product", response_model=AssessmentOut)
+@router.post("/{assessment_id}/confirm", response_model=AssessmentOut)
 async def confirm_product(
     assessment_id: uuid.UUID,
     body: ProductConfirmRequest,
