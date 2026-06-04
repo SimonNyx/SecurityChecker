@@ -50,10 +50,11 @@ class AIClient:
 
     async def _gemini_complete(self, prompt: str, system: str) -> str:
         full_prompt = f"{system}\n\n{prompt}" if system else prompt
-        url = f"{self.base_url}/v1beta/models/{self.model}:generateContent?key={self.api_key}"
+        url = f"{self.base_url}/v1beta/models/{self.model}:generateContent"
         async with httpx.AsyncClient(timeout=120) as http:
             resp = await http.post(
                 url,
+                headers={"x-goog-api-key": self.api_key},
                 json={"contents": [{"parts": [{"text": full_prompt}]}]},
             )
             resp.raise_for_status()
