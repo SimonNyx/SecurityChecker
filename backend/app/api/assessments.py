@@ -1,6 +1,9 @@
 import uuid
+import logging
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
+
+logger = logging.getLogger(__name__)
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.database import get_db
@@ -60,11 +63,10 @@ async def create_assessment(
     await log_action(db, current_user.id, "submit_assessment", "assessment", assessment.id)
     await db.commit()
 
-    # Enqueue Celery job (no-op stub until Plan 2)
     try:
         celery_app.send_task("run_assessment", args=[str(assessment.id)])
-    except Exception:
-        pass  # Celery not running in tests
+    except Exception as e:
+        logger.error(f"Failed to dispatch run_assessment for {assessment.id}: {e}")
 
     return assessment
 
@@ -110,8 +112,8 @@ async def confirm_product(
 
     try:
         celery_app.send_task("run_analysis", args=[str(assessment_id)])
-    except Exception:
-        pass
+    except Exception as e:
+        logger.error(f"Failed to dispatch run_analysis for {assessment_id}: {e}")
 
     return assessment
 
