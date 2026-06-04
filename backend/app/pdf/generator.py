@@ -63,7 +63,8 @@ def generate_pdf(assessment) -> bytes:
         "recommendation_colour": RECOMMENDATION_COLOURS.get(rec, "#999"),
         "findings": findings_data,
         "executive_summary": assessment.executive_summary or "",
-        "generated_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"),
+        "submitted_by_name": assessment.submitted_by_name or "—",
+        "generated_at": datetime.utcnow().strftime("%d/%m/%Y %H:%M UTC"),
     }
 
     html_content = template.render(**context)

@@ -34,7 +34,7 @@
   .section-title { font-size: 13pt; font-weight: bold; color: #1e40af; margin-bottom: 10px; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; }
   .exec-summary { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 6px; padding: 14px 16px; margin-bottom: 24px; font-size: 10.5pt; line-height: 1.7; white-space: pre-wrap; }
 
-  .footer { position: fixed; bottom: 0; left: 0; right: 0; font-size: 8pt; color: #9ca3af; border-top: 1px solid #e5e7eb; padding: 6px 15mm; display: flex; justify-content: space-between; }
+  @page { @bottom-left { content: "SecurityChecker — Confidential"; font-size: 8pt; color: #9ca3af; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; } @bottom-right { content: "{{ generated_at }}"; font-size: 8pt; color: #9ca3af; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; } }
 </style>
 </head>
 <body>
@@ -49,6 +49,8 @@
   <div class="meta-item"><label>Review Mode</label><span>{{ review_mode }}</span></div>
   <div class="meta-item"><label>Website</label><span>{{ product_url }}</span></div>
   <div class="meta-item"><label>Repository</label><span>{{ repo_url }}</span></div>
+  <div class="meta-item"><label>Submitted By</label><span>{{ submitted_by_name }}</span></div>
+  <div class="meta-item"><label>Generated</label><span>{{ generated_at }}</span></div>
 </div>
 
 <div class="verdict-box">
@@ -97,10 +99,6 @@
   </tbody>
 </table>
 
-<div class="footer">
-  <span>SecurityChecker &mdash; Confidential</span>
-  <span>{{ generated_at }}</span>
-</div>
 
 </body>
 </html>
