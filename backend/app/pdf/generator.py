@@ -1,4 +1,5 @@
 import os
+import re
 from datetime import datetime
 from jinja2 import Environment, FileSystemLoader
 from weasyprint import HTML
@@ -23,6 +24,42 @@ RECOMMENDATION_COLOURS = {
     "conditional": "#f59e0b",
     "reject": "#ef4444",
 }
+
+SECTION_PATTERNS = [
+    (re.compile(r'overall\s+posture', re.I), 'Overall Posture'),
+    (re.compile(r'key\s+strengths?', re.I), 'Key Strengths'),
+    (re.compile(r'key\s+concerns?', re.I), 'Key Concerns'),
+    (re.compile(r'recommended?\s+next\s+steps?', re.I), 'Recommended Next Steps'),
+]
+
+
+def _parse_exec_summary(text: str) -> list[dict]:
+    """Return [{heading, lines, is_list}] for each section."""
+    sections = []
+    current = None
+    for raw in text.split('\n'):
+        line = re.sub(r'^[#*\s]+|[#*\s]+$', '', raw).strip()
+        if not line:
+            continue
+        matched = None
+        clean = line.lower()
+        for pattern, label in SECTION_PATTERNS:
+            if pattern.search(clean):
+                matched = label
+                break
+        if matched:
+            if current:
+                sections.append(current)
+            current = {'heading': matched, 'lines': []}
+        elif current:
+            current['lines'].append(line)
+    if current:
+        sections.append(current)
+    for s in sections:
+        s['is_list'] = bool(s['lines']) and s['lines'][0].startswith('-')
+        s['lines'] = [l.lstrip('- ').strip() if s['is_list'] else l for l in s['lines']]
+    return sections
+
 
 CATEGORY_LABELS = {
     "vendor_trust": "Vendor Trust",
@@ -63,6 +100,7 @@ def generate_pdf(assessment) -> bytes:
         "recommendation_colour": RECOMMENDATION_COLOURS.get(rec, "#999"),
         "findings": findings_data,
         "executive_summary": assessment.executive_summary or "",
+        "exec_sections": _parse_exec_summary(assessment.executive_summary) if assessment.executive_summary else [],
         "submitted_by_name": assessment.submitted_by_name or "—",
         "generated_at": datetime.utcnow().strftime("%d/%m/%Y %H:%M UTC"),
     }

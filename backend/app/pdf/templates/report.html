@@ -74,48 +74,19 @@
   </div>
 </div>
 
-{% if executive_summary %}
+{% if exec_sections %}
 <div class="section-title">Executive Summary</div>
 <div class="exec-summary">
-  {% set section_map = [
-    ['overall posture', 'Overall Posture'],
-    ['key strengths', 'Key Strengths'],
-    ['key concerns', 'Key Concerns'],
-    ['recommended next steps', 'Recommended Next Steps']
-  ] %}
-  {% set ns = namespace(current_heading='', current_lines=[]) %}
-  {% for raw_line in executive_summary.split('\n') %}
-    {% set line = raw_line.strip() %}
-    {% set clean = line.replace('#','').replace('*','').strip().lower() %}
-    {% set matched_label = '' %}
-    {% for pair in section_map %}{% if pair[0] in clean and not matched_label %}{% set matched_label = pair[1] %}{% endif %}{% endfor %}
-    {% if matched_label %}
-      {% if ns.current_heading %}
-        <div class="exec-section">
-          <h4>{{ ns.current_heading }}</h4>
-          {% if ns.current_lines and ns.current_lines[0].startswith('-') %}
-            <ul>{% for l in ns.current_lines %}<li>{{ l[1:].strip() }}</li>{% endfor %}</ul>
-          {% else %}
-            <p>{{ ns.current_lines | join(' ') }}</p>
-          {% endif %}
-        </div>
-      {% endif %}
-      {% set ns.current_heading = matched_label %}
-      {% set ns.current_lines = [] %}
-    {% elif line %}
-      {% set ns.current_lines = ns.current_lines + [line] %}
+  {% for section in exec_sections %}
+  <div class="exec-section">
+    <h4>{{ section.heading }}</h4>
+    {% if section.is_list %}
+      <ul>{% for l in section.lines %}<li>{{ l }}</li>{% endfor %}</ul>
+    {% else %}
+      <p>{{ section.lines | join(' ') }}</p>
     {% endif %}
+  </div>
   {% endfor %}
-  {% if ns.current_heading %}
-    <div class="exec-section">
-      <h4>{{ ns.current_heading }}</h4>
-      {% if ns.current_lines and ns.current_lines[0].startswith('-') %}
-        <ul>{% for l in ns.current_lines %}<li>{{ l[1:].strip() }}</li>{% endfor %}</ul>
-      {% else %}
-        <p>{{ ns.current_lines | join(' ') }}</p>
-      {% endif %}
-    </div>
-  {% endif %}
 </div>
 {% endif %}
 
