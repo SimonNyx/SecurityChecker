@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     openwebui_base_url: str = "http://localhost:3000"
     cors_origins: str = "http://localhost:3000"
     algorithm: str = "HS256"
-    access_token_expire_hours: int = 8
+    access_token_expire_minutes: int = 15
+    refresh_token_expire_days: int = 7
 
 settings = Settings()

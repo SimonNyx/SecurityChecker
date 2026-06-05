@@ -18,7 +18,7 @@ export default function LoginPage() {
     setError(null)
     try {
       const data = await loginAPI(email, password)
-      login(data.access_token)
+      login(data.access_token, data.refresh_token)
       navigate('/', { replace: true })
     } catch {
       setError('Invalid email or password.')

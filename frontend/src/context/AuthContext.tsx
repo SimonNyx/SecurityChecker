@@ -7,7 +7,7 @@ interface AuthUser {
 
 interface AuthContextValue {
   user: AuthUser | null
-  login: (token: string) => void
+  login: (accessToken: string, refreshToken: string) => void
   logout: () => void
   isAuthenticated: boolean
 }
@@ -20,13 +20,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return token ? { token } : null
   })
 
-  const login = useCallback((token: string) => {
-    localStorage.setItem('token', token)
-    setUser({ token })
+  const login = useCallback((accessToken: string, refreshToken: string) => {
+    localStorage.setItem('token', accessToken)
+    localStorage.setItem('refresh_token', refreshToken)
+    setUser({ token: accessToken })
   }, [])
 
   const logout = useCallback(() => {
     localStorage.removeItem('token')
+    localStorage.removeItem('refresh_token')
     setUser(null)
   }, [])
 
