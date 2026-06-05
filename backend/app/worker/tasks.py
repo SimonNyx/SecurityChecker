@@ -301,13 +301,29 @@ Respond with the JSON object only."""
         return ""
 
 
+def _repair_json(text: str) -> str:
+    import json
+    try:
+        json.loads(text)
+        return text
+    except json.JSONDecodeError:
+        pass
+    if text.rstrip().endswith('"}'):
+        candidate = text.rstrip()[:-1] + "]}"
+        try:
+            json.loads(candidate)
+            return candidate
+        except json.JSONDecodeError:
+            pass
+    return text
+
+
 def _format_exec_summary(raw: str) -> str:
     import json, re
     text = raw.strip()
-    # Strip markdown code fences if present
     text = re.sub(r'^```[a-z]*\n?', '', text)
     text = re.sub(r'\n?```$', '', text)
-    text = text.strip()
+    text = _repair_json(text.strip())
     try:
         data = json.loads(text)
         lines = []
