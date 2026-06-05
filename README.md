@@ -18,8 +18,11 @@ AI-driven security posture assessment tool. Takes a product name, URL, or GitHub
    - Data Exfiltration Risk
    - Third-Party Integrations
 4. **Results** scored 0–10 per module, aggregated to an overall RAG (Red/Amber/Green) and recommendation (Approve / Conditional / Reject)
-5. **PDF export** of the full report
-6. **Deep Review mode** runs a 5-advisor council (Threat Modeler, Compliance Officer, Risk Analyst, Devil's Advocate, Pragmatist) with anonymous peer review and chairman synthesis per module — produces more rigorous, UK Defence-aligned analysis (JSP 440, JSP 604, Cyber Essentials, NCSC CAF)
+5. **Executive summary** AI-generated structured overview with posture, strengths, concerns, and next steps
+6. **Run history** — last 3 re-runs retained per assessment with date, operator, and scores
+7. **PDF export** of the full report including executive summary and module findings
+8. **Methodology page** — in-app documentation explaining scoring weights, RAG thresholds, and module logic
+9. **Deep Review mode** runs a 5-advisor council (Threat Modeler, Compliance Officer, Risk Analyst, Devil's Advocate, Pragmatist) with anonymous peer review and chairman synthesis per module — produces more rigorous, UK Defence-aligned analysis (JSP 440, JSP 604, Cyber Essentials, NCSC CAF)
 
 ---
 
@@ -67,7 +70,13 @@ docker compose --profile frontend up -d frontend
 
 API: http://localhost:8000  
 UI: http://localhost:3000  
-Default credentials: `admin@securitychecker.local` / `changeme`
+
+The seed script generates a **random admin password** on first run and prints it once to stdout. Save it — it will not be shown again.
+
+```bash
+# View the generated password from compose logs
+docker compose logs api | grep "Seeded:"
+```
 
 ---
 
@@ -82,18 +91,21 @@ Default credentials: `admin@securitychecker.local` / `changeme`
 | `SECRET_KEY` | JWT signing secret (min 32 chars) |
 | `ENCRYPTION_KEY` | Fernet key for encrypting AI API keys at rest |
 | `POSTGRES_USER` / `PASSWORD` / `DB` | Postgres credentials |
+| `CORS_ORIGINS` | Comma-separated allowed origins (default: `http://localhost:3000`) |
 
 ### AI provider (in-app)
 
-Navigate to **Admin → AI Config** and configure:
+Navigate to **Admin → AI Config**. Each provider (Ollama, Open WebUI, Gemini) has independent settings — save each separately, then click **Set Active** to switch. Settings for inactive providers are preserved.
 
 | Provider | Base URL example | Notes |
 |---|---|---|
-| Ollama | `http://host.containers.internal:11434` | Must bind to `0.0.0.0` not `127.0.0.1` |
+| Ollama | `http://host.containers.internal:11434` | Must bind to `0.0.0.0`: `OLLAMA_HOST=0.0.0.0 ollama serve` |
 | Open WebUI | `http://your-openwebui-host:3000` | Uses `/api/chat/completions` |
-| Gemini | `https://generativelanguage.googleapis.com` | Requires API key |
+| Gemini | `https://generativelanguage.googleapis.com` | API key encrypted at rest |
 
-Use **Test Connection** to validate before running assessments.
+> **Podman + suspend/resume**: `host.containers.internal` may stop resolving after laptop suspend. Use the host's LAN IP (e.g. `http://192.168.1.x:11434`) as a workaround, or restart containers after resume.
+
+Use **Test Active Provider** to validate before running assessments.
 
 ---
 
@@ -116,9 +128,11 @@ Submit → PENDING
        → COMPLETE / FAILED
 ```
 
-- **Re-run**: run all modules again with a different review mode
+- **Re-run**: run all modules again with a different review mode or updated scope — previous results snapshotted to run history
+- **Run history**: last 3 re-runs retained per assessment (date, operator, score, RAG)
 - **Single-module re-run**: re-run one specific module via `POST /api/v1/assessments/{id}/modules/{category}/rerun`
-- **Delete**: removes assessment and all findings
+- **Delete**: removes assessment and all findings (owner or admin only)
+- **Progress tracking**: live module progress and elapsed timer shown during analysis
 
 ---
 
@@ -139,9 +153,10 @@ POST   /api/v1/assessments/{id}/modules/{category}/rerun
 DELETE /api/v1/assessments/{id}
 GET    /api/v1/assessments/{id}/pdf
 PUT    /api/v1/assessments/{id}/findings/{category}
-GET    /api/v1/admin/ai-config
-PUT    /api/v1/admin/ai-config
-POST   /api/v1/admin/ai-config/test
+GET    /api/v1/ai-config
+PUT    /api/v1/ai-config/{provider}
+POST   /api/v1/ai-config/{provider}/activate
+POST   /api/v1/ai-config/test
 GET    /api/v1/admin/users
 ```
 
@@ -169,6 +184,7 @@ docker compose exec api alembic upgrade head
 
 - Use `host.containers.internal` instead of `host-gateway` for host networking
 - Ollama must bind to `0.0.0.0`: `OLLAMA_HOST=0.0.0.0 ollama serve`
+- `host.containers.internal` may break after laptop suspend/resume — restart containers or use host LAN IP
 - nginx DNS resolver auto-detected from `/etc/resolv.conf` at container startup
 
 ---
@@ -199,3 +215,9 @@ docker compose exec api alembic upgrade head
 │       └── context/      # Auth context
 └── docker-compose.yml
 ```
+
+---
+
+## Licence
+
+Copyright 2026 SimonNyx. Licensed under the [Apache License 2.0](LICENSE).
