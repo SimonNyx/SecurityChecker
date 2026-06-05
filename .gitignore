@@ -9,3 +9,6 @@ dist/
 node_modules/
 .superpowers/
 .claude/settings.local.json
+/certs/*.crt
+/certs/*.pem
+/certs/*.key

@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     encryption_key: str
     openwebui_base_url: str = "http://localhost:3000"
     cors_origins: str = "http://localhost:3000"
+    ai_ca_bundle: str = ""  # path to CA cert file inside container, e.g. /certs/ca.crt
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 7
