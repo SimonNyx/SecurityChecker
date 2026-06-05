@@ -66,7 +66,7 @@ export default function MethodologyPage() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {[
-                { module: 'CVE History', weight: '2.0', rationale: 'Known exploits represent the most direct and quantifiable security risk.' },
+                { module: 'CVE History', weight: '2.0', rationale: 'Scored on patch responsiveness, not raw CVE count. High-profile products with rapid patching score well; slow or unpatched vulnerabilities score poorly.' },
                 { module: 'Maintenance', weight: '1.5', rationale: 'Unmaintained software cannot receive patches, compounding all other risks over time.' },
                 { module: 'Dependency Risk', weight: '1.5', rationale: 'Vulnerable or abandoned dependencies are a primary supply-chain attack vector.' },
                 { module: 'Encryption', weight: '1.5', rationale: 'Inadequate encryption directly exposes data in transit and at rest.' },

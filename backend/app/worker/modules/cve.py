@@ -6,7 +6,19 @@ from app.worker.scoring import score_to_rag
 SYSTEM = """You are a security analyst assessing CVE history for software approval.
 Respond with JSON only, no markdown. Schema:
 {"score": <float 0-10>, "summary": "<1-3 sentences>", "findings": {"total_cves": 0, "critical": 0, "high": 0, "medium": 0, "low": 0, "recent_cves": [...], "avg_patch_days": null, "unpatched_critical": 0}}
-Score rubric: 9-10=no CVEs or only low severity resolved quickly; 7-8=few medium CVEs, patched within 30 days; 5-6=several high CVEs, patched within 90 days; 3-4=critical CVEs or slow patching; 0-2=unpatched critical CVEs or history of ignoring vulnerabilities."""
+
+Scoring principles:
+- Raw CVE count is NOT the primary signal. High-profile, widely-deployed products (browsers, enterprise platforms, OS components) attract more CVEs because they are more scrutinised and more targeted — this is expected and normal.
+- PATCH RESPONSIVENESS is the most important factor: how quickly are vulnerabilities fixed once discovered? A product with 200 CVEs patched within 14 days on average is more trustworthy than one with 10 CVEs left unpatched for 6 months.
+- Positive signals that RAISE the score: active security team, coordinated disclosure programme, bug bounty, rapid patch cadence (under 30 days average), CVEs resolved before or shortly after public disclosure, track record of proactive patching.
+- Negative signals that LOWER the score: unpatched critical/high CVEs, slow patch times (90+ days), history of ignoring reports, CVEs actively exploited in the wild with no patch, vendor silence on disclosures.
+
+Score rubric:
+9-10: Strong patch responsiveness (avg <14 days), no unpatched criticals, proactive disclosure programme — high CVE count acceptable if all addressed promptly.
+7-8: Good responsiveness (avg <30 days), minor unpatched lows only, or low-CVE product with good track record.
+5-6: Mixed — some delayed patches (30-90 days) or a few unpatched medium/high CVEs, no clear disclosure programme.
+3-4: Poor responsiveness (90+ days average), multiple unpatched high CVEs, or evidence of ignoring reports.
+0-2: Critical CVEs actively unpatched, product abandoned, or history of dismissing security reports."""
 
 async def _fetch_nvd(product_name: str) -> list[dict]:
     """Query NVD API for recent CVEs. Returns list of CVE summaries."""
@@ -41,7 +53,14 @@ class CVEModule(BaseModule):
 NVD data (last 20 results):
 {json.dumps(nvd_data, indent=2)}
 
-Additional context: research recent security advisories, patch cadence, responsible disclosure programme.
+Assess the following and weight your score accordingly:
+1. Patch responsiveness — average time from CVE disclosure to patch release. This is the most important factor.
+2. Product exposure context — is this a high-profile target (browser, enterprise platform, OS component) where a higher CVE count is expected and normal?
+3. Active security programme — evidence of bug bounty, coordinated disclosure, dedicated security team.
+4. Unpatched CVEs — are any critical or high CVEs currently unpatched or actively exploited?
+5. Trend — is the patch cadence improving or worsening over recent releases?
+
+Do not penalise high CVE volume alone if patch responsiveness is strong. A large, widely-used product that patches quickly should score higher than a niche product with few CVEs but poor responsiveness.
 Return JSON only."""
 
         response = await self._ask_ai(prompt, system=SYSTEM)
