@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { listUsers, createUser, updateUser } from '../api/users'
-import type { Role, UserCreate } from '../types'
+import type { Role, UserCreate, UserUpdate } from '../types'
 
 const ROLES: Role[] = ['admin', 'analyst', 'viewer']
 
@@ -20,7 +20,7 @@ export default function AdminUsersPage() {
   })
 
   const toggleActive = useMutation({
-    mutationFn: ({ id, is_active }: { id: string; is_active: boolean }) => updateUser(id, { is_active }),
+    mutationFn: ({ id, ...update }: { id: string } & UserUpdate) => updateUser(id, update),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
   })
 
@@ -84,6 +84,7 @@ export default function AdminUsersPage() {
               <th className="text-left px-4 py-3 font-semibold text-gray-600">Email</th>
               <th className="text-left px-4 py-3 font-semibold text-gray-600">Role</th>
               <th className="text-left px-4 py-3 font-semibold text-gray-600">Status</th>
+              <th className="text-left px-4 py-3 font-semibold text-gray-600">API Keys</th>
               <th className="text-left px-4 py-3 font-semibold text-gray-600">Actions</th>
             </tr>
           </thead>
@@ -97,6 +98,14 @@ export default function AdminUsersPage() {
                   <span className={`text-xs font-medium ${u.is_active ? 'text-green-700' : 'text-red-600'}`}>
                     {u.is_active ? 'Active' : 'Inactive'}
                   </span>
+                </td>
+                <td className="px-4 py-3">
+                  <button
+                    onClick={() => toggleActive.mutate({ id: u.id, can_generate_api_keys: !u.can_generate_api_keys })}
+                    className={`text-xs font-medium ${u.can_generate_api_keys ? 'text-green-700' : 'text-gray-400'} hover:underline`}
+                  >
+                    {u.can_generate_api_keys ? 'Enabled' : 'Disabled'}
+                  </button>
                 </td>
                 <td className="px-4 py-3">
                   <button

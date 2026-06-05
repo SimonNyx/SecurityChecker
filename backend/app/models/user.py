@@ -21,4 +21,5 @@ class User(Base):
     full_name: Mapped[str] = mapped_column(String, nullable=False)
     role: Mapped[Role] = mapped_column(SAEnum(Role, name="role_enum"), nullable=False, default=Role.VIEWER)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    can_generate_api_keys: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())

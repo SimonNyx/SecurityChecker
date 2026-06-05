@@ -1,39 +1,58 @@
-import { createContext, useContext, useState, useCallback } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import type { ReactNode } from 'react'
-
-interface AuthUser {
-  token: string
-}
+import type { User } from '../types'
+import client from '../api/client'
 
 interface AuthContextValue {
-  user: AuthUser | null
+  currentUser: User | null
+  isAuthenticated: boolean
   login: (accessToken: string, refreshToken: string) => void
   logout: () => void
-  isAuthenticated: boolean
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(() => {
-    const token = localStorage.getItem('token')
-    return token ? { token } : null
-  })
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const [ready, setReady] = useState(false)
 
-  const login = useCallback((accessToken: string, refreshToken: string) => {
+  const fetchMe = useCallback(async () => {
+    try {
+      const { data } = await client.get<User>('/auth/me')
+      setCurrentUser(data)
+    } catch {
+      setCurrentUser(null)
+      localStorage.removeItem('token')
+      localStorage.removeItem('refresh_token')
+    } finally {
+      setReady(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (localStorage.getItem('token')) {
+      fetchMe()
+    } else {
+      setReady(true)
+    }
+  }, [fetchMe])
+
+  const login = useCallback(async (accessToken: string, refreshToken: string) => {
     localStorage.setItem('token', accessToken)
     localStorage.setItem('refresh_token', refreshToken)
-    setUser({ token: accessToken })
-  }, [])
+    await fetchMe()
+  }, [fetchMe])
 
   const logout = useCallback(() => {
     localStorage.removeItem('token')
     localStorage.removeItem('refresh_token')
-    setUser(null)
+    setCurrentUser(null)
   }, [])
 
+  if (!ready) return null
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ currentUser, isAuthenticated: !!currentUser, login, logout }}>
       {children}
     </AuthContext.Provider>
   )

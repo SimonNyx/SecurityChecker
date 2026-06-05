@@ -5,6 +5,7 @@ from app.models.product_confirmation import ProductConfirmation
 from app.models.ai_config import AIProviderConfig, AIProvider
 from app.models.audit_log import AuditLog
 from app.models.assessment_run import AssessmentRun
+from app.models.api_key import APIKey
 
 __all__ = [
     "User", "Role",
@@ -14,4 +15,5 @@ __all__ = [
     "AIProviderConfig", "AIProvider",
     "AuditLog",
     "AssessmentRun",
+    "APIKey",
 ]

@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from app.api import auth, assessments, users, ai_config, pdf
+from app.api import auth, assessments, users, ai_config, pdf, api_keys
 from app.config import settings
 
 limiter = Limiter(key_func=get_remote_address)
@@ -24,3 +24,4 @@ app.include_router(assessments.router, prefix="/api/v1")
 app.include_router(users.router, prefix="/api/v1")
 app.include_router(ai_config.router, prefix="/api/v1")
 app.include_router(pdf.router, prefix="/api/v1")
+app.include_router(api_keys.router, prefix="/api/v1")

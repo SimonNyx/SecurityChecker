@@ -11,6 +11,7 @@ import AdminAIConfigPage from './pages/AdminAIConfigPage'
 import NewAssessmentPage from './pages/NewAssessmentPage'
 import AssessmentDetailPage from './pages/AssessmentDetailPage'
 import MethodologyPage from './pages/MethodologyPage'
+import ProfilePage from './pages/ProfilePage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,6 +35,7 @@ export default function App() {
                 <Route path="/assessments/new" element={<NewAssessmentPage />} />
                 <Route path="/assessments/:id" element={<AssessmentDetailPage />} />
                 <Route path="/methodology" element={<MethodologyPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

@@ -21,6 +21,18 @@ export interface User {
   full_name: string
   role: Role
   is_active: boolean
+  can_generate_api_keys: boolean
+}
+
+export interface APIKey {
+  id: string
+  name: string
+  key_prefix: string
+  expires_at: string
+  created_at: string
+  last_used_at: string | null
+  is_active: boolean
+  key?: string  // only present immediately after creation
 }
 
 export interface AssessmentFinding {
@@ -119,4 +131,5 @@ export interface UserUpdate {
   full_name?: string
   role?: Role
   is_active?: boolean
+  can_generate_api_keys?: boolean
 }

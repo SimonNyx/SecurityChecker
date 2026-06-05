@@ -29,7 +29,7 @@ client.interceptors.response.use(
           const { data } = await axios.post('/api/v1/auth/refresh', { refresh_token: refreshToken })
           localStorage.setItem('token', data.access_token)
           localStorage.setItem('refresh_token', data.refresh_token)
-          if (original) original.headers = { ...original.headers, Authorization: `Bearer ${data.access_token}` }
+          if (original?.headers) original.headers['Authorization'] = `Bearer ${data.access_token}`
           refreshing = false
           return client(original!)
         } catch {

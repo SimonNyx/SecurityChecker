@@ -33,6 +33,7 @@ async def create_user(
         hashed_password=hash_password(body.password),
         full_name=body.full_name,
         role=body.role,
+        can_generate_api_keys=(body.role == Role.ADMIN),
     )
     db.add(user)
     await db.commit()
@@ -41,6 +42,7 @@ async def create_user(
     await db.commit()
     return user
 
+@router.patch("/{user_id}", response_model=UserOut)
 @router.put("/{user_id}", response_model=UserOut)
 async def update_user(
     user_id: uuid.UUID,
@@ -58,6 +60,8 @@ async def update_user(
         user.role = body.role
     if body.is_active is not None:
         user.is_active = body.is_active
+    if body.can_generate_api_keys is not None:
+        user.can_generate_api_keys = body.can_generate_api_keys
     await db.commit()
     await db.refresh(user)
     await log_action(db, current_user.id, "update_user", "user", user_id)
